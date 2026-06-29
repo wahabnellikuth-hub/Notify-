@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Food Service Reminder</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2e7d32">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fa-solid fa-utensils"></i> Food Service
+        </div>
+        <div class="nav-actions">
+            <button id="nav-home" class="nav-btn active"><i class="fa-solid fa-house"></i></button>
+            <button id="nav-members" class="nav-btn"><i class="fa-solid fa-users"></i></button>
+            <button id="nav-settings" class="nav-btn"><i class="fa-solid fa-gear"></i></button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="container">
+        
+        <!-- ==================== HOME VIEW ==================== -->
+        <section id="view-home" class="view active">
+            <div class="card date-card">
+                <div class="date-header">Today</div>
+                <div class="date-value" id="today-date">--</div>
+            </div>
+
+            <div class="card tomorrow-card">
+                <div class="date-header">Tomorrow</div>
+                <div class="date-value" id="tomorrow-date">--</div>
+                
+                <div class="provider-info" id="tomorrow-provider-info">
+                    <div class="provider-label">Responsible Provider:</div>
+                    <div class="provider-name" id="provider-name">No Provider Scheduled</div>
+                    <div class="provider-phone" id="provider-phone">--</div>
+                </div>
+            </div>
+
+            <div class="reminder-card">
+                <div class="reminder-time-label">Reminder Time: <span id="display-reminder-time">08:00 PM</span></div>
+                <div class="countdown" id="reminder-countdown">00:00:00</div>
+                <div class="countdown-label">until next reminder</div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="btn-prepare-msg-home" class="btn btn-primary btn-large">
+                    <i class="fa-brands fa-whatsapp"></i> Send WhatsApp Reminder
+                </button>
+                <button id="btn-skip-tomorrow" class="btn btn-danger btn-large mt-3">
+                    <i class="fa-solid fa-calendar-xmark"></i> Skip Tomorrow's Service
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==================== MEMBERS VIEW ==================== -->
+        <section id="view-members" class="view">
+            <div class="view-header">
+                <h2>Members</h2>
+                <button id="btn-add-member" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add</button>
+            </div>
+            
+            <div class="list-container" id="members-list">
+                <!-- Members will be injected here -->
+                <div class="empty-state">No members added yet.</div>
+            </div>
+
+            <div class="action-buttons mt-4">
+                <button id="btn-complete-registration" class="btn btn-success btn-large w-100">
+                    <i class="fa-solid fa-check-circle"></i> Finalize List
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==================== SETTINGS VIEW ==================== -->
+        <section id="view-settings" class="view">
+            <div class="view-header">
+                <h2>Settings</h2>
+            </div>
+            
+            <div class="card settings-card">
+                <div class="form-group">
+                    <label for="setting-reminder-time">Daily Reminder Time</label>
+                    <input type="time" id="setting-reminder-time" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="setting-start-date">Rotation Start Date</label>
+                    <input type="date" id="setting-start-date" class="form-control">
+                    <small class="text-muted">The date when the first provider on the list started/starts.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="setting-template">WhatsApp Message Template (Malayalam)</label>
+                    <textarea id="setting-template" class="form-control" rows="8"></textarea>
+                    <small class="text-muted">Use <strong>{{Date}}</strong> and <strong>{{ReceiversCount}}</strong> as placeholders.</small>
+                </div>
+
+                <button id="btn-save-settings" class="btn btn-primary w-100 mt-2">Save Settings</button>
+            </div>
+
+            <div class="card settings-card mt-3">
+                <h3>Data Backup</h3>
+                <div class="d-flex gap-2 mt-2">
+                    <button id="btn-export-data" class="btn btn-outline flex-1"><i class="fa-solid fa-file-export"></i> Export JSON</button>
+                    <button class="btn btn-outline flex-1" onclick="document.getElementById('import-file').click()"><i class="fa-solid fa-file-import"></i> Import JSON</button>
+                    <input type="file" id="import-file" accept=".json" style="display:none;">
+                </div>
+                <button id="btn-reset-data" class="btn btn-danger w-100 mt-3"><i class="fa-solid fa-trash"></i> Reset All Data</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modals -->
+
+    <!-- Add/Edit Member Modal -->
+    <div id="modal-member" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-member-title">Add Member</h3>
+            <div class="form-group">
+                <label for="member-name">Name</label>
+                <input type="text" id="member-name" class="form-control" placeholder="Enter name">
+            </div>
+            <div class="form-group">
+                <label for="member-phone">WhatsApp Number (with country code, e.g., 919876543210)</label>
+                <input type="tel" id="member-phone" class="form-control" placeholder="91...">
+            </div>
+            <div class="modal-actions">
+                <button id="btn-cancel-member" class="btn btn-outline">Cancel</button>
+                <button id="btn-save-member" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prepare WhatsApp Message Modal -->
+    <div id="modal-whatsapp" class="modal">
+        <div class="modal-content">
+            <h3>Prepare Reminder</h3>
+            <p>Tomorrow: <strong id="wa-provider-name">--</strong></p>
+            <div class="form-group">
+                <label for="receivers-count">Number of Food Receivers (ഉസ്താദുമാരുടെ എണ്ണം)</label>
+                <input type="number" id="receivers-count" class="form-control" placeholder="Enter number" style="font-size: 1.5rem; text-align: center;">
+            </div>
+            <div class="modal-actions-vertical">
+                <button id="btn-open-whatsapp" class="btn btn-success btn-large">
+                    <i class="fa-brands fa-whatsapp"></i> Open WhatsApp
+                </button>
+                <button id="btn-mark-sent" class="btn btn-outline btn-large mt-2">
+                    <i class="fa-solid fa-check"></i> Mark as Sent
+                </button>
+                <button id="btn-cancel-whatsapp" class="btn btn-outline btn-large mt-2">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Schedule Prompt Modal -->
+    <div id="modal-update-prompt" class="modal">
+        <div class="modal-content">
+            <h3>Update Schedule</h3>
+            <p>The member list has changed. How would you like to update the schedule?</p>
+            <div class="modal-actions-vertical">
+                <button id="btn-update-next-rotation" class="btn btn-primary btn-large">
+                    (Recommended) Update from Next Rotation
+                </button>
+                <button id="btn-update-regenerate" class="btn btn-outline btn-large mt-2">
+                    Regenerate Entire Schedule
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Message</div>
+
+    <!-- Scripts -->
+    <script src="js/store.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered', reg))
+                .catch(err => console.error('Service Worker registration failed', err));
+        }
+    </script>
+</body>
+</html>

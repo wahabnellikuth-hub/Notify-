@@ -362,6 +362,29 @@ document.addEventListener('DOMContentLoaded', () => {
         window.open(waUrl, '_blank');
     });
 
+    document.getElementById('btn-alert-organizer').addEventListener('click', () => {
+        const count = document.getElementById('receivers-count').value.trim();
+        if (!count) {
+            alert("Please enter the number of receivers.");
+            return;
+        }
+
+        const settings = Store.getSettings();
+        if (!settings.organizerNumber) {
+            alert("Please set the Organizer's WhatsApp Number in Settings first.");
+            return;
+        }
+
+        const dateStr = formatDate(tomorrowDateObj);
+        
+        let message = `*Food Service Reminder Alert*\n\nTomorrow (${dateStr})'s provider is *${tomorrowProvider.name}* (${tomorrowProvider.phone}).\n\nReceivers count: ${count}.`;
+        
+        const phone = settings.organizerNumber.replace(/\D/g, ''); // strip non-digits
+        
+        const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, '_blank');
+    });
+
     document.getElementById('btn-mark-sent').addEventListener('click', () => {
         showToast("Reminder marked as sent!");
         modalWhatsApp.classList.remove('active');
@@ -373,15 +396,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const settings = Store.getSettings();
         document.getElementById('setting-reminder-time').value = settings.reminderTime;
         document.getElementById('setting-template').value = settings.messageTemplate;
+        document.getElementById('setting-organizer-phone').value = settings.organizerNumber || '';
         document.getElementById('setting-start-date').value = Store.getStartDate() || '';
     }
 
     document.getElementById('btn-save-settings').addEventListener('click', () => {
         const reminderTime = document.getElementById('setting-reminder-time').value;
         const messageTemplate = document.getElementById('setting-template').value;
+        const organizerNumber = document.getElementById('setting-organizer-phone').value.trim();
         const startDate = document.getElementById('setting-start-date').value;
 
-        Store.updateSettings({ reminderTime, messageTemplate });
+        Store.updateSettings({ reminderTime, messageTemplate, organizerNumber });
         if (startDate) {
             Store.setStartDate(startDate);
             Store.setRegistrationCompleted(true);

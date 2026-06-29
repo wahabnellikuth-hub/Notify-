@@ -17,7 +17,8 @@ const defaultState = {
     skipDates: [], // Array of YYYY-MM-DD
     settings: {
         reminderTime: '20:00', // Default 8 PM
-        messageTemplate: DEFAULT_TEMPLATE
+        messageTemplate: DEFAULT_TEMPLATE,
+        organizerNumber: ''
     },
     registrationCompleted: false,
     hasUnfinalizedChanges: false,

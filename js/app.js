@@ -179,6 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         listContainer.innerHTML = '';
 
+        const isCompleted = Store.isRegistrationCompleted() && !Store.hasUnfinalizedChanges();
+
         if (providers.length === 0) {
             listContainer.innerHTML = '<div class="empty-state">No members added yet.</div>';
         } else {
@@ -191,22 +193,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="member-name-list">${provider.name}</div>
                         <div class="member-phone-list">${provider.phone}</div>
                     </div>
+                    ${isCompleted ? '' : `
                     <div class="member-actions">
                         <button class="btn-icon" onclick="moveProvider(${index}, -1)" ${index === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
                         <button class="btn-icon" onclick="moveProvider(${index}, 1)" ${index === providers.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
                         <button class="btn-icon edit" onclick="editProvider('${provider.id}')"><i class="fa-solid fa-pencil"></i></button>
                         <button class="btn-icon delete" onclick="deleteProvider('${provider.id}')"><i class="fa-solid fa-trash"></i></button>
-                    </div>
+                    </div>`}
                 `;
                 listContainer.appendChild(item);
             });
         }
 
         const btnComplete = document.getElementById('btn-complete-registration');
-        if (Store.isRegistrationCompleted() && !Store.hasUnfinalizedChanges()) {
+        const btnAdd = document.getElementById('btn-add-member');
+        const btnEditList = document.getElementById('btn-edit-list');
+
+        if (isCompleted) {
             btnComplete.style.display = 'none';
+            if (btnAdd) btnAdd.style.display = 'none';
+            if (btnEditList) btnEditList.style.display = 'inline-block';
         } else {
             btnComplete.style.display = providers.length > 0 ? 'block' : 'none';
+            if (btnAdd) btnAdd.style.display = 'inline-block';
+            if (btnEditList) btnEditList.style.display = 'none';
         }
     }
 
@@ -243,6 +253,12 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMembers();
         }
     };
+
+    // Edit List
+    document.getElementById('btn-edit-list').addEventListener('click', () => {
+        Store.setUnfinalizedChanges(true);
+        renderMembers();
+    });
 
     // Add Member
     document.getElementById('btn-add-member').addEventListener('click', () => {

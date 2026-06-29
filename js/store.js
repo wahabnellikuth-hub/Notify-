@@ -20,7 +20,8 @@ const defaultState = {
         messageTemplate: DEFAULT_TEMPLATE
     },
     registrationCompleted: false,
-    hasUnfinalizedChanges: false
+    hasUnfinalizedChanges: false,
+    lastUpdated: 0
 };
 
 const FIREBASE_URL = 'https://notify-9aa17-default-rtdb.firebaseio.com/appData.json';
@@ -48,6 +49,7 @@ const Store = {
     },
 
     save() {
+        this.data.lastUpdated = Date.now();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
         this.pushToFirebase();
     },
@@ -64,11 +66,17 @@ const Store = {
                 merged.skipDates = data.skipDates || [];
                 merged.settings = { ...defaultState.settings, ...data.settings };
                 
-                // Only update if different
-                if (JSON.stringify(this.data) !== JSON.stringify(merged)) {
+                const localTime = this.data.lastUpdated || 0;
+                const remoteTime = data.lastUpdated || 0;
+                
+                // Only update if remote is newer or same and different
+                if (remoteTime >= localTime && JSON.stringify(this.data) !== JSON.stringify(merged)) {
                     this.data = merged;
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
                     window.dispatchEvent(new Event('store-synced'));
+                } else if (localTime > remoteTime) {
+                    // Local is newer, push to Firebase to update it
+                    this.pushToFirebase();
                 }
             }
         } catch (e) {

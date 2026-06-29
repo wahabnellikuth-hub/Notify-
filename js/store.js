@@ -166,7 +166,7 @@ const Store = {
         this.save();
     },
 
-    getHasUnfinalizedChanges() {
+    hasUnfinalizedChanges() {
         return this.data.hasUnfinalizedChanges || false;
     },
 

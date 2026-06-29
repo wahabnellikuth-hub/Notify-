@@ -5,7 +5,9 @@ const DEFAULT_TEMPLATE = `السلام عليكم ورحمة الله وبركا
 നാളെ ({{Date}}) താങ്കളുടെ ഭക്ഷണ സേവനത്തിന്റെ ദിവസമാണ്.
 
 നാളത്തെ ഉസ്താദുമാരുടെ എണ്ണം:
-*{{ReceiversCount}}*
+നാസ്ത: *{{Breakfast}}*
+ഉച്ച: *{{Lunch}}*
+രാത്രി: *{{Dinner}}*
 
 അല്ലാഹു താങ്കളുടെ സേവനം സ്വീകരിക്കുകയും അതിന് അർഹമായ പ്രതിഫലം നൽകുകയും ചെയ്യട്ടെ.
 
@@ -22,6 +24,7 @@ const defaultState = {
     },
     registrationCompleted: false,
     hasUnfinalizedChanges: false,
+    lastSentDate: null,
     lastUpdated: 0
 };
 
@@ -163,12 +166,21 @@ const Store = {
         this.save();
     },
 
-    hasUnfinalizedChanges() {
+    getHasUnfinalizedChanges() {
         return this.data.hasUnfinalizedChanges || false;
     },
 
     setUnfinalizedChanges(status) {
         this.data.hasUnfinalizedChanges = status;
+        this.save();
+    },
+
+    getLastSentDate() {
+        return this.data.lastSentDate;
+    },
+
+    markSent(dateStr) {
+        this.data.lastSentDate = dateStr;
         this.save();
     },
 
@@ -209,8 +221,17 @@ const Store = {
         }
     },
 
-    resetData() {
-        this.data = JSON.parse(JSON.stringify(defaultState));
+    resetSettings() {
+        this.data.settings = JSON.parse(JSON.stringify(defaultState.settings));
+        this.save();
+    },
+
+    resetMembers() {
+        this.data.providers = [];
+        this.data.startDate = null;
+        this.data.skipDates = [];
+        this.data.registrationCompleted = false;
+        this.data.hasUnfinalizedChanges = false;
         this.save();
     }
 };

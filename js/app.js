@@ -334,7 +334,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // === WhatsApp Modal Flow ===
     document.getElementById('btn-prepare-msg-home').addEventListener('click', () => {
         document.getElementById('wa-provider-name').textContent = tomorrowProvider.name;
-        document.getElementById('receivers-count').value = '';
+        document.getElementById('receivers-breakfast').value = '';
+        document.getElementById('receivers-lunch').value = '';
+        document.getElementById('receivers-dinner').value = '';
         modalWhatsApp.classList.add('active');
     });
 
@@ -343,8 +345,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-open-whatsapp').addEventListener('click', () => {
-        const count = document.getElementById('receivers-count').value.trim();
-        if (!count) {
+        const breakfast = document.getElementById('receivers-breakfast').value.trim();
+        const lunch = document.getElementById('receivers-lunch').value.trim();
+        const dinner = document.getElementById('receivers-dinner').value.trim();
+
+        if (!breakfast && !lunch && !dinner) {
             alert("Please enter the number of receivers.");
             return;
         }
@@ -354,36 +359,30 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let message = template
             .replace('{{Date}}', dateStr)
-            .replace('{{ReceiversCount}}', count);
+            .replace('{{Breakfast}}', breakfast || '0')
+            .replace('{{Lunch}}', lunch || '0')
+            .replace('{{Dinner}}', dinner || '0')
+            .replace('{{ReceiversCount}}', (parseInt(breakfast || 0) + parseInt(lunch || 0) + parseInt(dinner || 0)).toString());
         
         const phone = tomorrowProvider.phone.replace(/\D/g, ''); // strip non-digits
         
         const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        
+        // Mark as sent for today to stop nagging
+        const today = new Date();
+        const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        Store.markSent(todayStr);
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'MARK_SENT',
+                date: todayStr
+            });
+        }
+        
         window.open(waUrl, '_blank');
     });
 
-    document.getElementById('btn-alert-organizer').addEventListener('click', () => {
-        const count = document.getElementById('receivers-count').value.trim();
-        if (!count) {
-            alert("Please enter the number of receivers.");
-            return;
-        }
 
-        const settings = Store.getSettings();
-        if (!settings.organizerNumber) {
-            alert("Please set the Organizer's WhatsApp Number in Settings first.");
-            return;
-        }
-
-        const dateStr = formatDate(tomorrowDateObj);
-        
-        let message = `*Food Service Reminder Alert*\n\nTomorrow (${dateStr})'s provider is *${tomorrowProvider.name}* (${tomorrowProvider.phone}).\n\nReceivers count: ${count}.`;
-        
-        const phone = settings.organizerNumber.replace(/\D/g, ''); // strip non-digits
-        
-        const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-        window.open(waUrl, '_blank');
-    });
 
     document.getElementById('btn-mark-sent').addEventListener('click', () => {
         showToast("Reminder marked as sent!");
@@ -441,10 +440,18 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsText(file);
     });
 
-    document.getElementById('btn-reset-data').addEventListener('click', () => {
-        if (confirm("WARNING: This will delete ALL data. Are you sure?")) {
-            Store.resetData();
-            showToast("All data reset.");
+    document.getElementById('btn-reset-settings').addEventListener('click', () => {
+        if (confirm("WARNING: This will reset all your Settings (including the template) back to default. Your member list will NOT be deleted. Are you sure?")) {
+            Store.resetSettings();
+            showToast("Settings reset.");
+            location.reload();
+        }
+    });
+
+    document.getElementById('btn-reset-members').addEventListener('click', () => {
+        if (confirm("WARNING: This will delete ALL members and reset your schedule. Your Settings will remain intact. Are you sure?")) {
+            Store.resetMembers();
+            showToast("Members list reset.");
             location.reload();
         }
     });
@@ -458,7 +465,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                     navigator.serviceWorker.controller.postMessage({
                         type: 'SCHEDULE_NOTIFICATION',
-                        time: Store.getSettings().reminderTime
+                        time: Store.getSettings().reminderTime,
+                        lastSentDate: Store.getLastSentDate()
                     });
                 }
             }

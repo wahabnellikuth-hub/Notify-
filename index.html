@@ -32,34 +32,45 @@
         
         <!-- ==================== HOME VIEW ==================== -->
         <section id="view-home" class="view active">
-            <div class="card date-card">
-                <div class="date-header">Today</div>
-                <div class="date-value" id="today-date">--</div>
+            <!-- Hero / Date Header -->
+            <div class="hero-header">
+                <p class="hero-subtitle">Today</p>
+                <h2 class="hero-title" id="today-date">--</h2>
             </div>
 
-            <div class="card tomorrow-card">
-                <div class="date-header">Tomorrow</div>
-                <div class="date-value" id="tomorrow-date">--</div>
+            <!-- "Upcoming Order" style card -->
+            <div class="order-card">
+                <div class="order-header">
+                    <span class="order-badge"><i class="fa-solid fa-bell-concierge"></i> Tomorrow's Provider</span>
+                    <span class="order-date" id="tomorrow-date">--</span>
+                </div>
                 
-                <div class="provider-info" id="tomorrow-provider-info">
-                    <div class="provider-label">Responsible Provider:</div>
-                    <div class="provider-name" id="provider-name">No Provider Scheduled</div>
-                    <div class="provider-phone" id="provider-phone">--</div>
+                <div class="provider-info-modern" id="tomorrow-provider-info">
+                    <div class="provider-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="provider-details">
+                        <h3 class="provider-name" id="provider-name">No Provider Scheduled</h3>
+                        <p class="provider-phone" id="provider-phone">--</p>
+                    </div>
+                </div>
+                
+                <div class="order-footer">
+                    <div class="countdown-widget">
+                        <div class="countdown-label">Reminder at <span id="display-reminder-time">08:00 PM</span></div>
+                        <div class="countdown" id="reminder-countdown">00:00:00</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="reminder-card">
-                <div class="reminder-time-label">Reminder Time: <span id="display-reminder-time">08:00 PM</span></div>
-                <div class="countdown" id="reminder-countdown">00:00:00</div>
-                <div class="countdown-label">until next reminder</div>
-            </div>
-
-            <div class="action-buttons">
-                <button id="btn-prepare-msg-home" class="btn btn-primary btn-large">
-                    <i class="fa-brands fa-whatsapp"></i> Send WhatsApp Reminder
+            <!-- Action Buttons styled as Checkout CTA -->
+            <div class="action-buttons-modern">
+                <button id="btn-prepare-msg-home" class="btn btn-primary btn-checkout">
+                    <span><i class="fa-brands fa-whatsapp"></i> Send Reminder</span>
+                    <i class="fa-solid fa-arrow-right"></i>
                 </button>
-                <button id="btn-skip-tomorrow" class="btn btn-danger btn-large mt-3">
-                    <i class="fa-solid fa-calendar-xmark"></i> Skip Tomorrow's Service
+                <button id="btn-skip-tomorrow" class="btn btn-outline btn-skip mt-3">
+                    <i class="fa-solid fa-calendar-xmark"></i> Skip Service
                 </button>
             </div>
         </section>
@@ -109,7 +120,7 @@
                 <div class="form-group">
                     <label for="setting-template">WhatsApp Message Template (Malayalam)</label>
                     <textarea id="setting-template" class="form-control" rows="8"></textarea>
-                    <small class="text-muted">Use <strong>{{Date}}</strong> and <strong>{{ReceiversCount}}</strong> as placeholders.</small>
+                    <small class="text-muted">Use <strong>{{Date}}</strong>, <strong>{{Breakfast}}</strong>, <strong>{{Lunch}}</strong>, <strong>{{Dinner}}</strong>, and <strong>{{ReceiversCount}}</strong> as placeholders.</small>
                 </div>
 
                 <div class="form-group">
@@ -128,7 +139,10 @@
                     <button class="btn btn-outline flex-1" onclick="document.getElementById('import-file').click()"><i class="fa-solid fa-file-import"></i> Import JSON</button>
                     <input type="file" id="import-file" accept=".json" style="display:none;">
                 </div>
-                <button id="btn-reset-data" class="btn btn-danger w-100 mt-3"><i class="fa-solid fa-trash"></i> Reset All Data</button>
+                <div class="d-flex gap-2 mt-3">
+                    <button id="btn-reset-settings" class="btn btn-outline flex-1"><i class="fa-solid fa-gear"></i> Reset Settings</button>
+                    <button id="btn-reset-members" class="btn btn-danger flex-1"><i class="fa-solid fa-users-slash"></i> Clear Members</button>
+                </div>
             </div>
         </section>
 
@@ -161,15 +175,25 @@
             <h3>Prepare Reminder</h3>
             <p>Tomorrow: <strong id="wa-provider-name">--</strong></p>
             <div class="form-group">
-                <label for="receivers-count">Number of Food Receivers (ഉസ്താദുമാരുടെ എണ്ണം)</label>
-                <input type="number" id="receivers-count" class="form-control" placeholder="Enter number" style="font-size: 1.5rem; text-align: center;">
+                <label>Number of Food Receivers (ഉസ്താദുമാരുടെ എണ്ണം)</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                    <div>
+                        <label for="receivers-breakfast" style="font-size: 0.85rem; text-align: center; display: block; margin-bottom: 0.25rem;">Breakfast</label>
+                        <input type="number" id="receivers-breakfast" class="form-control" placeholder="0" style="font-size: 1.25rem; text-align: center;">
+                    </div>
+                    <div>
+                        <label for="receivers-lunch" style="font-size: 0.85rem; text-align: center; display: block; margin-bottom: 0.25rem;">Lunch</label>
+                        <input type="number" id="receivers-lunch" class="form-control" placeholder="0" style="font-size: 1.25rem; text-align: center;">
+                    </div>
+                    <div>
+                        <label for="receivers-dinner" style="font-size: 0.85rem; text-align: center; display: block; margin-bottom: 0.25rem;">Dinner</label>
+                        <input type="number" id="receivers-dinner" class="form-control" placeholder="0" style="font-size: 1.25rem; text-align: center;">
+                    </div>
+                </div>
             </div>
             <div class="modal-actions-vertical">
                 <button id="btn-open-whatsapp" class="btn btn-success btn-large">
                     <i class="fa-brands fa-whatsapp"></i> Message Provider
-                </button>
-                <button id="btn-alert-organizer" class="btn btn-primary btn-large mt-2">
-                    <i class="fa-solid fa-bell"></i> Alert Organizer
                 </button>
                 <button id="btn-mark-sent" class="btn btn-outline btn-large mt-2">
                     <i class="fa-solid fa-check"></i> Mark as Sent

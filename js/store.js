@@ -23,6 +23,8 @@ const defaultState = {
     hasUnfinalizedChanges: false
 };
 
+const FIREBASE_URL = 'https://notify-9aa17-default-rtdb.firebaseio.com/appData.json';
+
 const Store = {
     data: null,
 
@@ -40,11 +42,50 @@ const Store = {
         } else {
             this.data = JSON.parse(JSON.stringify(defaultState));
         }
-        this.save();
+        
+        // Fetch from Firebase in the background
+        this.fetchFromFirebase();
     },
 
     save() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+        this.pushToFirebase();
+    },
+
+    async fetchFromFirebase() {
+        try {
+            const response = await fetch(FIREBASE_URL);
+            if (!response.ok) return;
+            const data = await response.json();
+            
+            if (data && typeof data === 'object') {
+                const merged = { ...defaultState, ...data };
+                merged.providers = data.providers || [];
+                merged.skipDates = data.skipDates || [];
+                merged.settings = { ...defaultState.settings, ...data.settings };
+                
+                // Only update if different
+                if (JSON.stringify(this.data) !== JSON.stringify(merged)) {
+                    this.data = merged;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+                    window.dispatchEvent(new Event('store-synced'));
+                }
+            }
+        } catch (e) {
+            console.error("Firebase fetch failed", e);
+        }
+    },
+
+    async pushToFirebase() {
+        try {
+            fetch(FIREBASE_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.data)
+            }).catch(e => console.error("Firebase push background fail", e));
+        } catch (e) {
+            console.error("Firebase push failed", e);
+        }
     },
 
     // Providers

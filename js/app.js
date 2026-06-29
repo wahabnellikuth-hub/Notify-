@@ -414,7 +414,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         Notification.requestPermission().then(permission => {
             if (permission === "granted") {
-                // Background notifications require service worker
                 if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                     navigator.serviceWorker.controller.postMessage({
                         type: 'SCHEDULE_NOTIFICATION',
@@ -424,6 +423,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // === Global Sync Event ===
+    window.addEventListener('store-synced', () => {
+        renderHome();
+        renderMembers();
+        renderSettings();
+        // showToast("Data synced from cloud");
+    });
 
     // Initialize App
     renderHome();

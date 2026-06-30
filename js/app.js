@@ -51,44 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // === Date & Schedule Logic ===
-    function calculateProviderForDate(targetDate) {
-        const providers = Store.getProviders();
-        const startDateStr = Store.getStartDate();
-        
-        if (!startDateStr || providers.length === 0) return null;
-
-        // Use UTC midnight to avoid timezone daylight saving issues
-        const start = new Date(startDateStr + 'T00:00:00');
-        const target = new Date(getYYYYMMDD(targetDate) + 'T00:00:00');
-        
-        if (target < start) return null; // Date is before rotation started
-
-        // Total days between start and target
-        const diffTime = Math.abs(target - start);
-        const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-        // Subtract skipped dates that fall between start and target
-        const skipDates = Store.getSkipDates();
-        let skipsToDeduct = 0;
-        
-        for (let dateStr of skipDates) {
-            const skipDate = new Date(dateStr + 'T00:00:00');
-            if (skipDate >= start && skipDate <= target) {
-                skipsToDeduct++;
-            }
-        }
-
-        // Check if target date itself is skipped
-        const targetStr = getYYYYMMDD(targetDate);
-        if (skipDates.includes(targetStr)) {
-            return { skipped: true };
-        }
-
-        const effectiveDays = totalDays - skipsToDeduct;
-        const providerIndex = effectiveDays % providers.length;
-        
-        return providers[providerIndex];
-    }
+    // (Legacy date-math removed, now using Queue logic)
 
     // === Home View ===
     function renderHome() {
@@ -105,34 +68,39 @@ document.addEventListener('DOMContentLoaded', () => {
         const time12hr = new Date('1970-01-01T' + settings.reminderTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
         document.getElementById('display-reminder-time').textContent = time12hr;
 
-        if (!Store.isRegistrationCompleted() || Store.getProviders().length === 0 || !Store.getStartDate()) {
+        if (!Store.isRegistrationCompleted() || Store.getProviders().length === 0) {
             document.getElementById('provider-name').textContent = "Registration Incomplete";
             document.getElementById('provider-phone').textContent = "Complete setup in Members tab";
             document.getElementById('btn-prepare-msg-home').disabled = true;
             document.getElementById('btn-skip-tomorrow').disabled = true;
+            document.getElementById('btn-skip-provider').disabled = true;
             return;
         }
 
-        tomorrowProvider = calculateProviderForDate(tomorrow);
+        const providers = Store.getProviders();
+        
+        const skipDates = Store.getSkipDates();
+        const targetStr = getYYYYMMDD(tomorrow);
+        const isTomorrowSkipped = skipDates.includes(targetStr);
 
         const btnPrepare = document.getElementById('btn-prepare-msg-home');
-        const btnSkip = document.getElementById('btn-skip-tomorrow');
+        const btnSkipTomorrow = document.getElementById('btn-skip-tomorrow');
+        const btnSkipProvider = document.getElementById('btn-skip-provider');
 
-        if (tomorrowProvider && tomorrowProvider.skipped) {
+        if (isTomorrowSkipped) {
             document.getElementById('provider-name').textContent = "No reminder for tomorrow.";
-            document.getElementById('provider-phone').textContent = "(Service Skipped)";
+            document.getElementById('provider-phone').textContent = "(Day Skipped)";
             btnPrepare.disabled = true;
-            btnSkip.disabled = true;
-        } else if (tomorrowProvider) {
+            btnSkipTomorrow.disabled = true;
+            btnSkipProvider.disabled = true;
+            tomorrowProvider = null;
+        } else {
+            tomorrowProvider = providers[0];
             document.getElementById('provider-name').textContent = tomorrowProvider.name;
             document.getElementById('provider-phone').textContent = tomorrowProvider.phone;
             btnPrepare.disabled = false;
-            btnSkip.disabled = false;
-        } else {
-            document.getElementById('provider-name').textContent = "Not Started Yet";
-            document.getElementById('provider-phone').textContent = `Starts on ${Store.getStartDate()}`;
-            btnPrepare.disabled = true;
-            btnSkip.disabled = true;
+            btnSkipTomorrow.disabled = false;
+            btnSkipProvider.disabled = false;
         }
 
         updateCountdown();
@@ -162,12 +130,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setInterval(updateCountdown, 1000);
 
-    // Skip Tomorrow
+    // Skip Day
     document.getElementById('btn-skip-tomorrow').addEventListener('click', () => {
-        if (confirm("Are you sure you want to skip tomorrow's service? The rotation will move to the next day.")) {
+        if (confirm("Are you sure you want to skip tomorrow's service entirely? The provider queue will NOT advance.")) {
             Store.addSkipDate(getYYYYMMDD(tomorrowDateObj));
             showToast("Tomorrow's service skipped.");
             renderHome();
+        }
+    });
+
+    // Skip Provider
+    document.getElementById('btn-skip-provider').addEventListener('click', () => {
+        if (confirm(`Are you sure you want to skip ${tomorrowProvider.name}? They will lose their turn and move to the back.`)) {
+            Store.advanceQueue('skipped');
+            showToast("Provider skipped.");
+            renderHome();
+            renderMembers();
         }
     });
 
@@ -187,11 +165,32 @@ document.addEventListener('DOMContentLoaded', () => {
             providers.forEach((provider, index) => {
                 const item = document.createElement('div');
                 item.className = 'member-item';
+                
+                // Show status marks if present
+                let statusMark = '';
+                let statusClass = '';
+                if (provider.status === 'sent') {
+                    statusMark = `<span class="status-badge sent" title="Sent on ${provider.statusDate}">✅</span>`;
+                    statusClass = 'opacity-75';
+                } else if (provider.status === 'skipped') {
+                    statusMark = `<span class="status-badge skipped" title="Skipped on ${provider.statusDate}">⏭️</span>`;
+                    statusClass = 'opacity-75';
+                }
+
+                // Show alt phone if exists
+                const altPhoneHtml = provider.altPhone ? `<br><small class="text-muted"><i class="fa-solid fa-phone"></i> ${provider.altPhone}</small>` : '';
+
+                // Serial number fallback
+                const serialNum = provider.originalIndex || (index + 1);
+
                 item.innerHTML = `
-                    <div class="member-sl">${index + 1}</div>
-                    <div class="member-info">
-                        <div class="member-name-list">${provider.name}</div>
-                        <div class="member-phone-list">${provider.phone}</div>
+                    <div class="member-sl">${serialNum}</div>
+                    <div class="member-info ${statusClass}">
+                        <div class="member-name-list">
+                            ${provider.name} 
+                            ${statusMark}
+                        </div>
+                        <div class="member-phone-list">${provider.phone} ${altPhoneHtml}</div>
                     </div>
                     ${isCompleted ? '' : `
                     <div class="member-actions">
@@ -241,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
             editingProviderId = id;
             document.getElementById('member-name').value = provider.name;
             document.getElementById('member-phone').value = provider.phone;
+            document.getElementById('member-alt-phone').value = provider.altPhone || '';
             document.getElementById('modal-member-title').textContent = 'Edit Member';
             modalMember.classList.add('active');
         }
@@ -265,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editingProviderId = null;
         document.getElementById('member-name').value = '';
         document.getElementById('member-phone').value = '';
+        document.getElementById('member-alt-phone').value = '';
         document.getElementById('modal-member-title').textContent = 'Add Member';
         modalMember.classList.add('active');
     });
@@ -276,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-save-member').addEventListener('click', () => {
         const name = document.getElementById('member-name').value.trim();
         const phone = document.getElementById('member-phone').value.trim();
+        const altPhone = document.getElementById('member-alt-phone').value.trim();
         
         if (!name || !phone) {
             alert("Please enter both name and phone number.");
@@ -283,10 +285,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (editingProviderId) {
-            Store.updateProvider(editingProviderId, { name, phone });
+            Store.updateProvider(editingProviderId, { name, phone, altPhone });
             checkScheduleUpdate();
         } else {
-            Store.addProvider({ name, phone });
+            Store.addProvider({ name, phone, altPhone });
             if (Store.isRegistrationCompleted()) checkScheduleUpdate();
         }
         
@@ -301,11 +303,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-complete-registration').addEventListener('click', () => {
         if (!Store.isRegistrationCompleted()) {
             Store.setRegistrationCompleted(true);
-            const today = new Date();
-            Store.setStartDate(getYYYYMMDD(today));
-            document.getElementById('setting-start-date').value = getYYYYMMDD(today);
             Store.setUnfinalizedChanges(false);
-            showToast("Registration Complete! Schedule generated.");
+            showToast("Registration Complete! Schedule ready.");
             switchView('view-home');
         } else {
             modalUpdatePrompt.classList.add('active');
@@ -337,6 +336,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('receivers-breakfast').value = '';
         document.getElementById('receivers-lunch').value = '';
         document.getElementById('receivers-dinner').value = '';
+        
+        if (tomorrowProvider.altPhone) {
+            document.getElementById('btn-open-whatsapp-alt').style.display = 'block';
+        } else {
+            document.getElementById('btn-open-whatsapp-alt').style.display = 'none';
+        }
+
         modalWhatsApp.classList.add('active');
     });
 
@@ -344,15 +350,10 @@ document.addEventListener('DOMContentLoaded', () => {
         modalWhatsApp.classList.remove('active');
     });
 
-    document.getElementById('btn-open-whatsapp').addEventListener('click', () => {
+    function prepareWhatsAppUrl(phoneStr) {
         const breakfast = document.getElementById('receivers-breakfast').value.trim();
         const lunch = document.getElementById('receivers-lunch').value.trim();
         const dinner = document.getElementById('receivers-dinner').value.trim();
-
-        if (!breakfast && !lunch && !dinner) {
-            alert("Please enter the number of receivers.");
-            return;
-        }
 
         const template = Store.getSettings().messageTemplate;
         const dateStr = formatDate(tomorrowDateObj);
@@ -364,13 +365,23 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace('{{Dinner}}', dinner || '0')
             .replace('{{ReceiversCount}}', (parseInt(breakfast || 0) + parseInt(lunch || 0) + parseInt(dinner || 0)).toString());
         
-        const phone = tomorrowProvider.phone.replace(/\D/g, ''); // strip non-digits
-        
-        const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-        
-        // Mark as sent for today to stop nagging
+        const phone = phoneStr.replace(/\D/g, ''); // strip non-digits
+        return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    }
+
+    document.getElementById('btn-open-whatsapp').addEventListener('click', () => {
+        const waUrl = prepareWhatsAppUrl(tomorrowProvider.phone);
+        window.open(waUrl, '_blank');
+    });
+
+    document.getElementById('btn-open-whatsapp-alt').addEventListener('click', () => {
+        const waUrl = prepareWhatsAppUrl(tomorrowProvider.altPhone);
+        window.open(waUrl, '_blank');
+    });
+
+    document.getElementById('btn-mark-sent').addEventListener('click', () => {
         const today = new Date();
-        const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        const todayStr = getYYYYMMDD(today);
         Store.markSent(todayStr);
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
@@ -379,14 +390,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        window.open(waUrl, '_blank');
-    });
-
-
-
-    document.getElementById('btn-mark-sent').addEventListener('click', () => {
+        // Advance the queue
+        Store.advanceQueue('sent');
         showToast("Reminder marked as sent!");
         modalWhatsApp.classList.remove('active');
+        renderHome();
+        renderMembers();
     });
 
 

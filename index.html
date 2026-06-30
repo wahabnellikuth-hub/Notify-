@@ -66,9 +66,14 @@
                     <span><i class="fa-brands fa-whatsapp"></i> Send Reminder</span>
                     <i class="fa-solid fa-arrow-right"></i>
                 </button>
-                <button id="btn-skip-tomorrow" class="btn btn-outline btn-skip mt-3">
-                    <i class="fa-solid fa-calendar-xmark"></i> Skip Service
-                </button>
+                <div class="d-flex gap-2 mt-3">
+                    <button id="btn-skip-provider" class="btn btn-outline btn-skip flex-1">
+                        <i class="fa-solid fa-user-xmark"></i> Skip Provider
+                    </button>
+                    <button id="btn-skip-tomorrow" class="btn btn-outline btn-skip flex-1">
+                        <i class="fa-solid fa-calendar-xmark"></i> Skip Day
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -175,6 +180,10 @@
                 <label for="member-phone">WhatsApp Number (with country code, e.g., 919876543210)</label>
                 <input type="tel" id="member-phone" class="form-control" placeholder="91...">
             </div>
+            <div class="form-group">
+                <label for="member-alt-phone">Alternative WhatsApp Number (Optional)</label>
+                <input type="tel" id="member-alt-phone" class="form-control" placeholder="91...">
+            </div>
             <div class="modal-actions">
                 <button id="btn-cancel-member" class="btn btn-outline">Cancel</button>
                 <button id="btn-save-member" class="btn btn-primary">Save</button>
@@ -206,10 +215,13 @@
             </div>
             <div class="modal-actions-vertical">
                 <button id="btn-open-whatsapp" class="btn btn-success btn-large">
-                    <i class="fa-brands fa-whatsapp"></i> Message Provider
+                    <i class="fa-brands fa-whatsapp"></i> Message Primary Number
+                </button>
+                <button id="btn-open-whatsapp-alt" class="btn btn-success btn-large mt-2" style="display: none; background-color: #128C7E;">
+                    <i class="fa-brands fa-whatsapp"></i> Message Alt Number
                 </button>
                 <button id="btn-mark-sent" class="btn btn-outline btn-large mt-2">
-                    <i class="fa-solid fa-check"></i> Mark as Sent
+                    <i class="fa-solid fa-check"></i> Mark as Sent (Next in Queue)
                 </button>
                 <button id="btn-cancel-whatsapp" class="btn btn-outline btn-large mt-2">Cancel</button>
             </div>

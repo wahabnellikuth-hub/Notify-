@@ -112,6 +112,9 @@ const Store = {
 
     addProvider(provider) {
         provider.id = Date.now().toString();
+        // Keep original index for display purposes (1-based)
+        provider.originalIndex = this.data.providers.length + 1;
+        provider.status = 'pending';
         this.data.providers.push(provider);
         this.save();
         return provider;
@@ -138,6 +141,26 @@ const Store = {
         });
         this.data.providers = newProviders;
         this.save();
+    },
+
+    advanceQueue(status) {
+        if (this.data.providers.length > 0) {
+            const currentProvider = this.data.providers.shift();
+            currentProvider.status = status;
+            
+            // Generate short date string like "Mon"
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const todayStr = days[new Date().getDay()];
+            currentProvider.statusDate = todayStr;
+
+            this.data.providers.push(currentProvider);
+            
+            // The new first provider becomes 'pending' if they had a previous status
+            this.data.providers[0].status = 'pending';
+            delete this.data.providers[0].statusDate;
+
+            this.save();
+        }
     },
 
     // State

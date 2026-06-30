@@ -37,10 +37,9 @@ self.addEventListener('fetch', event => {
     );
 });
 
-// A basic notification scheduler using alarms API if available,
-// Otherwise relying on the app being open.
 let reminderTime = null;
 let lastSentDateStr = null;
+let appOpenedAfterNotificationStr = null;
 
 // Helper to get today's date str in local timezone
 function getTodayDateStr() {
@@ -57,11 +56,32 @@ self.addEventListener('message', event => {
         checkTimeAndNotify();
     } else if (event.data && event.data.type === 'MARK_SENT') {
         lastSentDateStr = event.data.date;
+    } else if (event.data && event.data.type === 'APP_OPENED') {
+        const todayStr = event.data.date || getTodayDateStr();
+        if (reminderTime) {
+            const now = new Date();
+            const [hours, minutes] = reminderTime.split(':');
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const targetMinutes = parseInt(hours) * 60 + parseInt(minutes);
+            
+            // If the app is opened after the target time, stop nagging
+            if (currentMinutes >= targetMinutes) {
+                appOpenedAfterNotificationStr = todayStr;
+                // Close any existing notifications
+                self.registration.getNotifications().then(notifications => {
+                    notifications.forEach(n => n.close());
+                });
+            }
+        }
     }
 });
 
+let checkTimer = null;
+
 function checkTimeAndNotify() {
     if (!reminderTime) return;
+
+    if (checkTimer) clearTimeout(checkTimer);
 
     const now = new Date();
     const [hours, minutes] = reminderTime.split(':');
@@ -71,9 +91,8 @@ function checkTimeAndNotify() {
     const todayStr = getTodayDateStr();
     
     // Only fire if it's the exact minute or past it, and we haven't sent it today
-    if (currentMinutes >= targetMinutes && lastSentDateStr !== todayStr) {
-        // If it's exactly the minute, or we just woke up and missed it, we trigger it once.
-        // We use 'requireInteraction' so it stays on screen.
+    // AND app hasn't been opened after the target time today
+    if (currentMinutes >= targetMinutes && lastSentDateStr !== todayStr && appOpenedAfterNotificationStr !== todayStr) {
         self.registration.showNotification("Tomorrow's food reminder is ready.", {
             body: "Tap here to prepare the WhatsApp message.",
             icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23ff6b6b'/><text y='60' x='15' fill='white' font-size='40' font-family='sans-serif'>FS</text></svg>",
@@ -85,26 +104,13 @@ function checkTimeAndNotify() {
     }
 
     // Check every minute
-    setTimeout(checkTimeAndNotify, 60000);
+    checkTimer = setTimeout(checkTimeAndNotify, 60000);
 }
 
-// The Nagging Loop
+// The Nagging Loop is now handled by the 1-minute checkTimeAndNotify loop above
 self.addEventListener('notificationclose', event => {
-    const todayStr = getTodayDateStr();
-    
-    // If they dismissed the reminder, and it still hasn't been sent
-    if (lastSentDateStr !== todayStr) {
-        setTimeout(() => {
-            self.registration.showNotification("Please send the message to the providers..", {
-                body: "They are waiting. Tap here to open and send the WhatsApp reminder.",
-                icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23ee5253'/><text y='60' x='15' fill='white' font-size='40' font-family='sans-serif'>FS</text></svg>",
-                vibrate: [500, 200, 500, 200, 500],
-                tag: 'food-reminder-nag',
-                renotify: true,
-                requireInteraction: true
-            });
-        }, 300000); // Nag 5 minutes later
-    }
+    // We don't need to do anything here because checkTimeAndNotify 
+    // will just re-trigger the notification in a minute unless APP_OPENED or MARK_SENT is received.
 });
 
 self.addEventListener('notificationclick', event => {

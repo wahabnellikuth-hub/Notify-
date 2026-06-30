@@ -473,6 +473,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // === Notifications & PWA ===
+    function notifyAppOpened() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+                const today = new Date();
+                const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+                if (reg.active) {
+                    reg.active.postMessage({
+                        type: 'APP_OPENED',
+                        date: todayStr
+                    });
+                }
+            });
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            notifyAppOpened();
+        }
+    });
+
     // === Global Sync Event ===
     window.addEventListener('store-synced', () => {
         renderHome();
@@ -484,4 +506,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize App
     renderHome();
     scheduleNextNotification();
+    notifyAppOpened();
 });

@@ -14,21 +14,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <div id="app-container">
+        <!-- App Header -->
+        <header class="app-header">
+            <div class="nav-brand">
+                <i class="fa-solid fa-utensils"></i> Food Service
+            </div>
+        </header>
 
-    <!-- Top Navigation Bar -->
-    <nav class="navbar">
-        <div class="nav-brand">
-            <i class="fa-solid fa-utensils"></i> Food Service
-        </div>
-        <div class="nav-actions">
-            <button id="nav-home" class="nav-btn active"><i class="fa-solid fa-house"></i></button>
-            <button id="nav-members" class="nav-btn"><i class="fa-solid fa-users"></i></button>
-            <button id="nav-settings" class="nav-btn"><i class="fa-solid fa-gear"></i></button>
-        </div>
-    </nav>
-
-    <!-- Main Content Area -->
-    <main class="container">
+        <!-- Main Content Area -->
+        <main class="container">
         
         <!-- ==================== HOME VIEW ==================== -->
         <section id="view-home" class="view active">
@@ -148,6 +143,22 @@
 
     </main>
 
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <button id="nav-home" class="nav-btn active">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </button>
+        <button id="nav-members" class="nav-btn">
+            <i class="fa-solid fa-users"></i>
+            <span>Members</span>
+        </button>
+        <button id="nav-settings" class="nav-btn">
+            <i class="fa-solid fa-gear"></i>
+            <span>Settings</span>
+        </button>
+    </nav>
+
     <!-- Modals -->
 
     <!-- Add/Edit Member Modal -->
@@ -221,6 +232,8 @@
 
     <!-- Toast Notification -->
     <div id="toast" class="toast">Message</div>
+
+    </div> <!-- End of app-container -->
 
     <!-- Scripts -->
     <script src="js/store.js"></script>

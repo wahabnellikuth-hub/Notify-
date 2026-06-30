@@ -1,11 +1,12 @@
-const CACHE_NAME = 'food-service-v3';
+const CACHE_NAME = 'food-service-v4';
 const ASSETS = [
     '/',
     '/index.html',
     '/css/style.css',
     '/js/store.js',
     '/js/app.js',
-    '/manifest.json'
+    '/manifest.json',
+    '/icon.png'
 ];
 
 self.addEventListener('install', event => {
@@ -95,7 +96,7 @@ function checkTimeAndNotify() {
     if (currentMinutes >= targetMinutes && lastSentDateStr !== todayStr && appOpenedAfterNotificationStr !== todayStr) {
         self.registration.showNotification("Tomorrow's food reminder is ready.", {
             body: "Tap here to prepare the WhatsApp message.",
-            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23ff6b6b'/><text y='60' x='15' fill='white' font-size='40' font-family='sans-serif'>FS</text></svg>",
+            icon: "/icon.png",
             vibrate: [200, 100, 200],
             tag: 'food-reminder',
             renotify: true,

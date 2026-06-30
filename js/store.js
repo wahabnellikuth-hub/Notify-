@@ -50,6 +50,11 @@ const Store = {
         
         // Fetch from Firebase in the background
         this.fetchFromFirebase();
+        
+        // Poll Firebase periodically for global updates (every 30 seconds)
+        setInterval(() => {
+            this.fetchFromFirebase();
+        }, 30000);
     },
 
     save() {

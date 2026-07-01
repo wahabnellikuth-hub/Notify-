@@ -15,12 +15,15 @@ const DEFAULT_TEMPLATE = `السلام عليكم ورحمة الله وبركا
 
 const defaultState = {
     providers: [],
+    activeProviderId: null,
     startDate: null,
     skipDates: [], // Array of YYYY-MM-DD
     settings: {
         reminderTime: '20:00', // Default 8 PM
         messageTemplate: DEFAULT_TEMPLATE,
-        organizerNumber: ''
+        organizerNumber: '',
+        customStartProviderId: '',
+        loopTo: 'beginning'
     },
     registrationCompleted: false,
     hasUnfinalizedChanges: false,
@@ -110,12 +113,17 @@ const Store = {
         return this.data.providers;
     },
 
-    addProvider(provider) {
+    addProvider(provider, insertIndex = null) {
         provider.id = Date.now().toString();
-        // Keep original index for display purposes (1-based)
-        provider.originalIndex = this.data.providers.length + 1;
         provider.status = 'pending';
-        this.data.providers.push(provider);
+        if (insertIndex !== null && insertIndex >= 0 && insertIndex < this.data.providers.length) {
+            this.data.providers.splice(insertIndex, 0, provider);
+        } else {
+            this.data.providers.push(provider);
+        }
+        if (this.data.providers.length === 1) {
+            this.data.activeProviderId = provider.id;
+        }
         this.save();
         return provider;
     },
@@ -130,6 +138,9 @@ const Store = {
 
     deleteProvider(id) {
         this.data.providers = this.data.providers.filter(p => p.id !== id);
+        if (this.data.activeProviderId === id) {
+            this.data.activeProviderId = null;
+        }
         this.save();
     },
 
@@ -143,9 +154,34 @@ const Store = {
         this.save();
     },
 
+    getActiveProvider() {
+        if (!this.data.providers || this.data.providers.length === 0) return null;
+        
+        let active = null;
+        if (this.data.activeProviderId) {
+            active = this.data.providers.find(p => p.id === this.data.activeProviderId);
+        }
+        
+        if (!active) {
+            // Default to custom start if set, else first person
+            if (this.data.settings.customStartProviderId) {
+                active = this.data.providers.find(p => p.id === this.data.settings.customStartProviderId);
+            }
+            if (!active) active = this.data.providers[0];
+            
+            this.data.activeProviderId = active.id;
+            this.save();
+        }
+        return active;
+    },
+
     advanceQueue(status) {
         if (this.data.providers.length > 0) {
-            const currentProvider = this.data.providers.shift();
+            const current = this.getActiveProvider();
+            let currentIndex = this.data.providers.findIndex(p => p.id === current.id);
+            if (currentIndex === -1) currentIndex = 0;
+            
+            const currentProvider = this.data.providers[currentIndex];
             currentProvider.status = status;
             
             // Generate short date string like "Mon"
@@ -153,11 +189,23 @@ const Store = {
             const todayStr = days[new Date().getDay()];
             currentProvider.statusDate = todayStr;
 
-            this.data.providers.push(currentProvider);
+            let nextIndex = currentIndex + 1;
             
-            // The new first provider becomes 'pending' if they had a previous status
-            this.data.providers[0].status = 'pending';
-            delete this.data.providers[0].statusDate;
+            if (nextIndex >= this.data.providers.length) {
+                // completed rotation!
+                if (this.data.settings.loopTo === 'custom' && this.data.settings.customStartProviderId) {
+                    const customIndex = this.data.providers.findIndex(p => p.id === this.data.settings.customStartProviderId);
+                    nextIndex = customIndex !== -1 ? customIndex : 0;
+                } else {
+                    nextIndex = 0;
+                }
+            }
+            
+            const nextProvider = this.data.providers[nextIndex];
+            this.data.activeProviderId = nextProvider.id;
+            
+            nextProvider.status = 'pending';
+            delete nextProvider.statusDate;
 
             this.save();
         }
@@ -256,10 +304,29 @@ const Store = {
 
     resetMembers() {
         this.data.providers = [];
+        this.data.activeProviderId = null;
         this.data.startDate = null;
         this.data.skipDates = [];
         this.data.registrationCompleted = false;
         this.data.hasUnfinalizedChanges = false;
+        this.save();
+    },
+    
+    resetToStartPerson() {
+        const customId = this.data.settings.customStartProviderId;
+        if (customId && this.data.providers.find(p => p.id === customId)) {
+            this.data.activeProviderId = customId;
+        } else if (this.data.providers.length > 0) {
+            this.data.activeProviderId = this.data.providers[0].id;
+        }
+        
+        if (this.data.activeProviderId) {
+            const active = this.data.providers.find(p => p.id === this.data.activeProviderId);
+            if (active) {
+                active.status = 'pending';
+                delete active.statusDate;
+            }
+        }
         this.save();
     }
 };

@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSkipProvider.disabled = true;
             tomorrowProvider = null;
         } else {
-            tomorrowProvider = providers[0];
+            tomorrowProvider = Store.getActiveProvider();
             document.getElementById('provider-name').textContent = tomorrowProvider.name;
             document.getElementById('provider-phone').textContent = tomorrowProvider.phone;
             btnPrepare.disabled = false;
@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         listContainer.innerHTML = '';
 
         const isCompleted = Store.isRegistrationCompleted() && !Store.hasUnfinalizedChanges();
+        const activeProvider = Store.getActiveProvider();
 
         if (providers.length === 0) {
             listContainer.innerHTML = '<div class="empty-state">No members added yet.</div>';
@@ -166,10 +167,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const item = document.createElement('div');
                 item.className = 'member-item';
                 
+                const isActive = activeProvider && provider.id === activeProvider.id;
+                
                 // Show status marks if present
                 let statusMark = '';
                 let statusClass = '';
-                if (provider.status === 'sent') {
+                if (isActive) {
+                    statusMark = `<span class="status-badge" style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">Next</span>`;
+                } else if (provider.status === 'sent') {
                     statusMark = `<span class="status-badge sent" title="Sent on ${provider.statusDate}">✅</span>`;
                     statusClass = 'opacity-75';
                 } else if (provider.status === 'skipped') {
@@ -180,8 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Show alt phone if exists
                 const altPhoneHtml = provider.altPhone ? `<br><small class="text-muted"><i class="fa-solid fa-phone"></i> ${provider.altPhone}</small>` : '';
 
-                // Serial number fallback
-                const serialNum = provider.originalIndex || (index + 1);
+                // Sequential serial number
+                const serialNum = index + 1;
 
                 item.innerHTML = `
                     <div class="member-sl">${serialNum}</div>
@@ -241,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('member-name').value = provider.name;
             document.getElementById('member-phone').value = provider.phone;
             document.getElementById('member-alt-phone').value = provider.altPhone || '';
+            document.getElementById('group-insert-position').style.display = 'none';
             document.getElementById('modal-member-title').textContent = 'Edit Member';
             modalMember.classList.add('active');
         }
@@ -266,6 +272,25 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('member-name').value = '';
         document.getElementById('member-phone').value = '';
         document.getElementById('member-alt-phone').value = '';
+        
+        const positionGroup = document.getElementById('group-insert-position');
+        const positionSelect = document.getElementById('member-position');
+        positionSelect.innerHTML = '';
+        
+        const providers = Store.getProviders();
+        for (let i = 0; i <= providers.length; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            if (i === providers.length) {
+                opt.textContent = `${i + 1} (At the End)`;
+            } else {
+                opt.textContent = i + 1;
+            }
+            positionSelect.appendChild(opt);
+        }
+        positionSelect.value = providers.length;
+        positionGroup.style.display = 'block';
+
         document.getElementById('modal-member-title').textContent = 'Add Member';
         modalMember.classList.add('active');
     });
@@ -278,6 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = document.getElementById('member-name').value.trim();
         const phone = document.getElementById('member-phone').value.trim();
         const altPhone = document.getElementById('member-alt-phone').value.trim();
+        const position = parseInt(document.getElementById('member-position').value, 10);
         
         if (!name || !phone) {
             alert("Please enter both name and phone number.");
@@ -288,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Store.updateProvider(editingProviderId, { name, phone, altPhone });
             checkScheduleUpdate();
         } else {
-            Store.addProvider({ name, phone, altPhone });
+            Store.addProvider({ name, phone, altPhone }, position);
             if (Store.isRegistrationCompleted()) checkScheduleUpdate();
         }
         
@@ -327,6 +353,10 @@ document.addEventListener('DOMContentLoaded', () => {
         modalUpdatePrompt.classList.remove('active');
         switchView('view-settings');
         showToast("Please select a new Start Date to regenerate the schedule.");
+    });
+
+    document.getElementById('btn-cancel-update').addEventListener('click', () => {
+        modalUpdatePrompt.classList.remove('active');
     });
 
 
@@ -406,6 +436,48 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('setting-template').value = settings.messageTemplate;
         document.getElementById('setting-organizer-phone').value = settings.organizerNumber || '';
         document.getElementById('setting-start-date').value = Store.getStartDate() || '';
+        
+        const customStartSelect = document.getElementById('setting-custom-start');
+        customStartSelect.innerHTML = '<option value="">Default (First Person)</option>';
+        Store.getProviders().forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name;
+            customStartSelect.appendChild(opt);
+        });
+        customStartSelect.value = settings.customStartProviderId || '';
+        
+        document.getElementById('setting-loop-to').value = settings.loopTo || 'beginning';
+        
+        // Local device setting
+        document.getElementById('setting-is-organizer').checked = localStorage.getItem('food_service_is_organizer') === 'true';
+        updateNotificationStatusUI();
+    }
+
+    function updateNotificationStatusUI() {
+        const statusEl = document.getElementById('notification-status');
+        if (!statusEl) return;
+        
+        if (!("Notification" in window)) {
+            statusEl.innerHTML = '<span style="color: #dc3545;"><i class="fa-solid fa-triangle-exclamation"></i> Not supported on this browser/device.</span>';
+            return;
+        }
+
+        const isOrganizer = localStorage.getItem('food_service_is_organizer') === 'true';
+        if (!isOrganizer) {
+            statusEl.innerHTML = 'Notifications are currently <strong>Off</strong> for this device.';
+            return;
+        }
+
+        if (Notification.permission === 'granted') {
+            const time = Store.getSettings().reminderTime;
+            const time12hr = new Date('1970-01-01T' + time).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
+            statusEl.innerHTML = `<span style="color: #198754;"><i class="fa-solid fa-check-circle"></i> Active! You will be notified daily at ${time12hr}.</span>`;
+        } else if (Notification.permission === 'denied') {
+            statusEl.innerHTML = '<span style="color: #dc3545;"><i class="fa-solid fa-ban"></i> Blocked by your browser. Please enable them in site settings.</span>';
+        } else {
+            statusEl.innerHTML = '<span style="color: #fd7e14;"><i class="fa-solid fa-circle-info"></i> Permission required. Save settings to prompt.</span>';
+        }
     }
 
     document.getElementById('btn-save-settings').addEventListener('click', () => {
@@ -413,17 +485,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageTemplate = document.getElementById('setting-template').value;
         const organizerNumber = document.getElementById('setting-organizer-phone').value.trim();
         const startDate = document.getElementById('setting-start-date').value;
+        const customStartProviderId = document.getElementById('setting-custom-start').value;
+        const loopTo = document.getElementById('setting-loop-to').value;
+        const isOrganizer = document.getElementById('setting-is-organizer').checked;
 
-        Store.updateSettings({ reminderTime, messageTemplate, organizerNumber });
+        Store.updateSettings({ reminderTime, messageTemplate, organizerNumber, customStartProviderId, loopTo });
         if (startDate) {
             Store.setStartDate(startDate);
             Store.setRegistrationCompleted(true);
         }
+        
+        // Save local setting
+        localStorage.setItem('food_service_is_organizer', isOrganizer ? 'true' : 'false');
 
         // Reschedule notification
         scheduleNextNotification();
 
         showToast("Settings saved!");
+    });
+
+    document.getElementById('btn-force-start').addEventListener('click', () => {
+        if (confirm("This will change the current turn to the Rotation Start Person. Are you sure?")) {
+            Store.resetToStartPerson();
+            showToast("Turn reset to Start Person");
+            renderHome();
+            renderMembers();
+        }
     });
 
     // Import/Export/Reset
@@ -468,8 +555,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // === Notifications & PWA ===
     function scheduleNextNotification() {
         if (!("Notification" in window)) return;
+        
+        const isOrganizer = localStorage.getItem('food_service_is_organizer') === 'true';
+        if (!isOrganizer) {
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ type: 'CANCEL_NOTIFICATION' });
+            }
+            return;
+        }
 
         Notification.requestPermission().then(permission => {
+            updateNotificationStatusUI();
             if (permission === "granted") {
                 if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                     navigator.serviceWorker.controller.postMessage({

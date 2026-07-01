@@ -75,6 +75,11 @@
                     </button>
                 </div>
             </div>
+            
+            <!-- Tagline -->
+            <div style="text-align: center; color: #888; font-size: 0.85rem; margin-top: 2rem; padding-bottom: 1rem;">
+                Created by wahabnellikuth-hub
+            </div>
         </section>
 
 
@@ -126,9 +131,37 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="setting-custom-start">Rotation Start Person</label>
+                    <select id="setting-custom-start" class="form-control">
+                        <option value="">Default (First Person)</option>
+                    </select>
+                    <small class="text-muted">The person who begins the rotation.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="setting-loop-to">When rotation completes, restart from:</label>
+                    <select id="setting-loop-to" class="form-control">
+                        <option value="beginning">Beginning of the List (First Person)</option>
+                        <option value="custom">Rotation Start Person</option>
+                    </select>
+                </div>
+
+                <div class="form-group mt-3">
+                    <button id="btn-force-start" class="btn btn-outline w-100">Reset Current Turn to Start Person</button>
+                </div>
+
+                <div class="form-group mt-3">
                     <label for="setting-organizer-phone">Organizer's WhatsApp Number</label>
                     <input type="tel" id="setting-organizer-phone" class="form-control" placeholder="e.g. 919876543210">
                     <small class="text-muted">The number that will receive the notification alert.</small>
+                </div>
+                
+                <div class="form-group mt-3" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #e9ecef;">
+                    <label class="d-flex align-items-center" style="margin-bottom: 0; cursor: pointer;">
+                        <input type="checkbox" id="setting-is-organizer" style="width: auto; margin-right: 0.75rem; transform: scale(1.2);">
+                        <strong>I am the Organizer (Receive Notifications)</strong>
+                    </label>
+                    <div id="notification-status" style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;"></div>
                 </div>
 
                 <button id="btn-save-settings" class="btn btn-primary w-100 mt-2">Save Settings</button>
@@ -183,6 +216,11 @@
             <div class="form-group">
                 <label for="member-alt-phone">Alternative WhatsApp Number (Optional)</label>
                 <input type="tel" id="member-alt-phone" class="form-control" placeholder="91...">
+            </div>
+            <div class="form-group" id="group-insert-position">
+                <label for="member-position">Insert Position (Serial Number)</label>
+                <select id="member-position" class="form-control">
+                </select>
             </div>
             <div class="modal-actions">
                 <button id="btn-cancel-member" class="btn btn-outline">Cancel</button>
@@ -239,6 +277,9 @@
                 </button>
                 <button id="btn-update-regenerate" class="btn btn-outline btn-large mt-2">
                     Regenerate Entire Schedule
+                </button>
+                <button id="btn-cancel-update" class="btn btn-outline btn-large mt-2">
+                    Cancel
                 </button>
             </div>
         </div>

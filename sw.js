@@ -57,6 +57,9 @@ self.addEventListener('message', event => {
         checkTimeAndNotify();
     } else if (event.data && event.data.type === 'MARK_SENT') {
         lastSentDateStr = event.data.date;
+    } else if (event.data && event.data.type === 'CANCEL_NOTIFICATION') {
+        reminderTime = null;
+        if (checkTimer) clearTimeout(checkTimer);
     } else if (event.data && event.data.type === 'APP_OPENED') {
         const todayStr = event.data.date || getTodayDateStr();
         if (reminderTime) {

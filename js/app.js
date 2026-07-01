@@ -399,17 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     }
 
-    document.getElementById('btn-open-whatsapp').addEventListener('click', () => {
-        const waUrl = prepareWhatsAppUrl(tomorrowProvider.phone);
-        window.open(waUrl, '_blank');
-    });
-
-    document.getElementById('btn-open-whatsapp-alt').addEventListener('click', () => {
-        const waUrl = prepareWhatsAppUrl(tomorrowProvider.altPhone);
-        window.open(waUrl, '_blank');
-    });
-
-    document.getElementById('btn-mark-sent').addEventListener('click', () => {
+    function executeSendAndMark() {
         const today = new Date();
         const todayStr = getYYYYMMDD(today);
         Store.markSent(todayStr);
@@ -420,12 +410,27 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        // Advance the queue
         Store.advanceQueue('sent');
         showToast("Reminder marked as sent!");
         modalWhatsApp.classList.remove('active');
         renderHome();
         renderMembers();
+    }
+
+    document.getElementById('btn-open-whatsapp').addEventListener('click', () => {
+        const waUrl = prepareWhatsAppUrl(tomorrowProvider.phone);
+        window.open(waUrl, '_blank');
+        executeSendAndMark();
+    });
+
+    document.getElementById('btn-open-whatsapp-alt').addEventListener('click', () => {
+        const waUrl = prepareWhatsAppUrl(tomorrowProvider.altPhone);
+        window.open(waUrl, '_blank');
+        executeSendAndMark();
+    });
+
+    document.getElementById('btn-mark-sent').addEventListener('click', () => {
+        executeSendAndMark();
     });
 
 

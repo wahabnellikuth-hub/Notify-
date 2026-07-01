@@ -298,7 +298,9 @@ const Store = {
     },
 
     resetSettings() {
+        const currentTemplate = this.data.settings.messageTemplate;
         this.data.settings = JSON.parse(JSON.stringify(defaultState.settings));
+        this.data.settings.messageTemplate = currentTemplate;
         this.save();
     },
 

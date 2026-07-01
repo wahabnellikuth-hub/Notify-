@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-reset-settings').addEventListener('click', () => {
-        if (confirm("WARNING: This will reset all your Settings (including the template) back to default. Your member list will NOT be deleted. Are you sure?")) {
+        if (confirm("WARNING: This will reset all your Settings back to default (except your custom WhatsApp template). Your member list will NOT be deleted. Are you sure?")) {
             Store.resetSettings();
             showToast("Settings reset.");
             location.reload();

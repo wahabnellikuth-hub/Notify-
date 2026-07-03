@@ -36,7 +36,7 @@
             </div>
 
             <!-- "Upcoming Order" style card -->
-            <div class="order-card">
+            <div id="active-provider-card" class="order-card">
                 <div class="order-header">
                     <span class="order-badge"><i class="fa-solid fa-bell-concierge"></i> Tomorrow's Provider</span>
                     <span class="order-date" id="tomorrow-date">--</span>
@@ -46,7 +46,7 @@
                     <div class="provider-avatar">
                         <i class="fa-solid fa-user"></i>
                     </div>
-                    <div class="provider-details">
+                    <div class="provider-details-modern">
                         <h3 class="provider-name" id="provider-name">No Provider Scheduled</h3>
                         <p class="provider-phone" id="provider-phone">--</p>
                     </div>
@@ -60,8 +60,26 @@
                 </div>
             </div>
 
+            <!-- Rotation Complete Card -->
+            <div id="rotation-complete-card" class="order-card" style="display: none; background: #fff3cd; border: 2px solid #ffeeba;">
+                <div class="order-header" style="border-bottom: 1px solid #ffeeba;">
+                    <span class="order-badge" style="background: #ffc107; color: #856404;"><i class="fa-solid fa-rotate"></i> Rotation Complete!</span>
+                </div>
+                <div style="padding: 1.5rem; text-align: center;">
+                    <p style="margin-bottom: 1rem; color: #856404;">The current cycle has ended. Would you like to proceed with the same list of members for the next cycle, or make changes?</p>
+                    <div class="d-flex gap-2 mt-3" style="flex-direction: column;">
+                        <button id="btn-restart-rotation" class="btn btn-primary" style="background-color: #28a745; justify-content: center;">
+                            <i class="fa-solid fa-check"></i> Proceed with Same Members
+                        </button>
+                        <button id="btn-edit-rotation" class="btn btn-outline" style="border-color: #856404; color: #856404; justify-content: center;">
+                            <i class="fa-solid fa-pencil"></i> Make Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Action Buttons styled as Checkout CTA -->
-            <div class="action-buttons-modern">
+            <div id="active-provider-actions" class="action-buttons-modern">
                 <button id="btn-prepare-msg-home" class="btn btn-primary btn-checkout">
                     <span><i class="fa-brands fa-whatsapp"></i> Send Reminder</span>
                     <i class="fa-solid fa-arrow-right"></i>
@@ -101,6 +119,9 @@
             <div class="action-buttons mt-4">
                 <button id="btn-complete-registration" class="btn btn-success btn-large w-100">
                     <i class="fa-solid fa-check-circle"></i> Finalize List
+                </button>
+                <button id="btn-export-schedule" class="btn btn-primary btn-large w-100 mt-2" style="display: none;">
+                    <i class="fa-solid fa-file-excel"></i> Export Schedule
                 </button>
             </div>
         </section>

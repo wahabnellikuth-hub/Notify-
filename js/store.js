@@ -22,11 +22,12 @@ const defaultState = {
         reminderTime: '20:00', // Default 8 PM
         messageTemplate: DEFAULT_TEMPLATE,
         organizerNumber: '',
-        customStartProviderId: '',
-        loopTo: 'beginning'
+        loopTo: 'first', // 'first' or 'custom'
+        customStartProviderId: null
     },
     registrationCompleted: false,
     hasUnfinalizedChanges: false,
+    rotationEnded: false,
     lastSentDate: null,
     lastUpdated: 0
 };
@@ -163,14 +164,43 @@ const Store = {
         }
         
         if (!active) {
-            // Default to custom start if set, else first person
+            // Default to custom start if set, else first non-paused person
             if (this.data.settings.customStartProviderId) {
-                active = this.data.providers.find(p => p.id === this.data.settings.customStartProviderId);
+                const customStart = this.data.providers.find(p => p.id === this.data.settings.customStartProviderId);
+                if (customStart && !customStart.isPaused) active = customStart;
             }
-            if (!active) active = this.data.providers[0];
+            if (!active) active = this.data.providers.find(p => !p.isPaused);
             
-            this.data.activeProviderId = active.id;
-            this.save();
+            if (active) {
+                this.data.activeProviderId = active.id;
+                this.save();
+            }
+        } else if (active.isPaused) {
+            // The currently active provider was paused, find the next unpaused provider
+            let currentIndex = this.data.providers.findIndex(p => p.id === active.id);
+            let loopCount = 0;
+            let nextIndex = currentIndex;
+            do {
+                nextIndex++;
+                if (nextIndex >= this.data.providers.length) {
+                    if (this.data.settings.loopTo === 'custom' && this.data.settings.customStartProviderId) {
+                        const customIndex = this.data.providers.findIndex(p => p.id === this.data.settings.customStartProviderId);
+                        nextIndex = customIndex !== -1 ? customIndex : 0;
+                    } else {
+                        nextIndex = 0;
+                    }
+                }
+                loopCount++;
+                if (loopCount > this.data.providers.length + 1) break;
+            } while (this.data.providers[nextIndex] && this.data.providers[nextIndex].isPaused);
+            
+            active = this.data.providers[nextIndex];
+            if (active && !active.isPaused) {
+                this.data.activeProviderId = active.id;
+                this.save();
+            } else {
+                active = null;
+            }
         }
         return active;
     },
@@ -178,36 +208,94 @@ const Store = {
     advanceQueue(status) {
         if (this.data.providers.length > 0) {
             const current = this.getActiveProvider();
+            if (!current) return;
+
             let currentIndex = this.data.providers.findIndex(p => p.id === current.id);
             if (currentIndex === -1) currentIndex = 0;
             
             const currentProvider = this.data.providers[currentIndex];
-            currentProvider.status = status;
-            
-            // Generate short date string like "Mon"
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const todayStr = days[new Date().getDay()];
-            currentProvider.statusDate = todayStr;
+            if (status !== 'pending' && currentProvider) {
+                currentProvider.status = status;
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const todayStr = days[new Date().getDay()];
+                currentProvider.statusDate = todayStr;
+            }
 
-            let nextIndex = currentIndex + 1;
+            let nextIndex = currentIndex;
+            let loopCount = 0;
+            let found = false;
             
-            if (nextIndex >= this.data.providers.length) {
-                // completed rotation!
-                if (this.data.settings.loopTo === 'custom' && this.data.settings.customStartProviderId) {
-                    const customIndex = this.data.providers.findIndex(p => p.id === this.data.settings.customStartProviderId);
-                    nextIndex = customIndex !== -1 ? customIndex : 0;
-                } else {
-                    nextIndex = 0;
+            while (loopCount < this.data.providers.length) {
+                nextIndex++;
+                if (nextIndex >= this.data.providers.length) {
+                    break;
                 }
+                if (!this.data.providers[nextIndex].isPaused) {
+                    found = true;
+                    break;
+                }
+                loopCount++;
             }
             
-            const nextProvider = this.data.providers[nextIndex];
-            this.data.activeProviderId = nextProvider.id;
-            
-            nextProvider.status = 'pending';
-            delete nextProvider.statusDate;
+            if (!found) {
+                this.data.rotationEnded = true;
+                this.data.activeProviderId = null;
+            } else {
+                const nextProvider = this.data.providers[nextIndex];
+                this.data.activeProviderId = nextProvider.id;
+                nextProvider.status = 'pending';
+                delete nextProvider.statusDate;
+            }
 
             this.save();
+        }
+    },
+
+    restartRotation() {
+        this.data.rotationEnded = false;
+        
+        let nextIndex;
+        if (this.data.settings.loopTo === 'custom' && this.data.settings.customStartProviderId) {
+            const customIndex = this.data.providers.findIndex(p => p.id === this.data.settings.customStartProviderId);
+            nextIndex = customIndex !== -1 ? customIndex : 0;
+        } else {
+            nextIndex = 0;
+        }
+
+        let loopCount = 0;
+        while (this.data.providers[nextIndex] && this.data.providers[nextIndex].isPaused) {
+            nextIndex++;
+            if (nextIndex >= this.data.providers.length) nextIndex = 0;
+            loopCount++;
+            if (loopCount > this.data.providers.length) break;
+        }
+
+        const nextProvider = this.data.providers[nextIndex];
+        if (nextProvider && !nextProvider.isPaused) {
+            this.data.activeProviderId = nextProvider.id;
+            nextProvider.status = 'pending';
+            delete nextProvider.statusDate;
+        }
+        
+        this.data.providers.forEach(p => {
+            if (p.id !== this.data.activeProviderId) {
+                p.status = 'pending';
+                delete p.statusDate;
+            }
+        });
+
+        this.save();
+    },
+    
+    togglePauseProvider(id) {
+        const index = this.data.providers.findIndex(p => p.id === id);
+        if (index !== -1) {
+            this.data.providers[index].isPaused = !this.data.providers[index].isPaused;
+            if (this.data.providers[index].isPaused && this.data.activeProviderId === id) {
+                this.advanceQueue('pending');
+            } else {
+                this.save();
+            }
         }
     },
 
@@ -243,11 +331,18 @@ const Store = {
     },
 
     hasUnfinalizedChanges() {
-        return this.data.hasUnfinalizedChanges || false;
+        return this.data.hasUnfinalizedChanges;
     },
 
-    setUnfinalizedChanges(status) {
-        this.data.hasUnfinalizedChanges = status;
+    isRotationEnded() {
+        return this.data.rotationEnded;
+    },
+
+    setUnfinalizedChanges(value) {
+        this.data.hasUnfinalizedChanges = value;
+        if (value) {
+            this.data.rotationEnded = false;
+        }
         this.save();
     },
 

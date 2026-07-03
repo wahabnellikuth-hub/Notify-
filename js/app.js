@@ -68,24 +68,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const time12hr = new Date('1970-01-01T' + settings.reminderTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
         document.getElementById('display-reminder-time').textContent = time12hr;
 
-        if (!Store.isRegistrationCompleted() || Store.getProviders().length === 0) {
-            document.getElementById('provider-name').textContent = "Registration Incomplete";
-            document.getElementById('provider-phone').textContent = "Complete setup in Members tab";
-            document.getElementById('btn-prepare-msg-home').disabled = true;
-            document.getElementById('btn-skip-tomorrow').disabled = true;
-            document.getElementById('btn-skip-provider').disabled = true;
-            return;
-        }
-
-        const providers = Store.getProviders();
-        
-        const skipDates = Store.getSkipDates();
-        const targetStr = getYYYYMMDD(tomorrow);
-        const isTomorrowSkipped = skipDates.includes(targetStr);
-
+        const activeCard = document.getElementById('active-provider-card');
+        const actionsCard = document.getElementById('active-provider-actions');
+        const completeCard = document.getElementById('rotation-complete-card');
         const btnPrepare = document.getElementById('btn-prepare-msg-home');
         const btnSkipTomorrow = document.getElementById('btn-skip-tomorrow');
         const btnSkipProvider = document.getElementById('btn-skip-provider');
+
+        if (!Store.isRegistrationCompleted() || Store.getProviders().length === 0) {
+            completeCard.style.display = 'none';
+            activeCard.style.display = 'block';
+            actionsCard.style.display = 'block';
+            
+            document.getElementById('provider-name').textContent = "Registration Incomplete";
+            document.getElementById('provider-phone').textContent = "Complete setup in Members tab";
+            btnPrepare.disabled = true;
+            btnSkipTomorrow.disabled = true;
+            btnSkipProvider.disabled = true;
+            return;
+        }
+
+        if (Store.isRotationEnded()) {
+            completeCard.style.display = 'block';
+            activeCard.style.display = 'none';
+            actionsCard.style.display = 'none';
+            return;
+        } else {
+            completeCard.style.display = 'none';
+            activeCard.style.display = 'block';
+            actionsCard.style.display = 'block';
+        }
+
+        const skipDates = Store.getSkipDates();
+        const targetStr = getYYYYMMDD(tomorrow);
+        const isTomorrowSkipped = skipDates.includes(targetStr);
 
         if (isTomorrowSkipped) {
             document.getElementById('provider-name').textContent = "No reminder for tomorrow.";
@@ -96,11 +112,11 @@ document.addEventListener('DOMContentLoaded', () => {
             tomorrowProvider = null;
         } else {
             tomorrowProvider = Store.getActiveProvider();
-            document.getElementById('provider-name').textContent = tomorrowProvider.name;
-            document.getElementById('provider-phone').textContent = tomorrowProvider.phone;
-            btnPrepare.disabled = false;
+            document.getElementById('provider-name').textContent = tomorrowProvider ? tomorrowProvider.name : "None";
+            document.getElementById('provider-phone').textContent = tomorrowProvider ? tomorrowProvider.phone : "--";
+            btnPrepare.disabled = !tomorrowProvider;
             btnSkipTomorrow.disabled = false;
-            btnSkipProvider.disabled = false;
+            btnSkipProvider.disabled = !tomorrowProvider;
         }
 
         updateCountdown();
@@ -129,6 +145,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setInterval(updateCountdown, 1000);
+
+    // Rotation Completion Actions
+    document.getElementById('btn-restart-rotation')?.addEventListener('click', () => {
+        Store.restartRotation();
+        showToast("Rotation restarted with the same members.");
+        renderHome();
+        renderMembers();
+    });
+
+    document.getElementById('btn-edit-rotation')?.addEventListener('click', () => {
+        Store.setUnfinalizedChanges(true);
+        showToast("List unlocked for changes. Finalize when done.");
+        switchView('view-members');
+    });
 
     // Skip Day
     document.getElementById('btn-skip-tomorrow').addEventListener('click', () => {
@@ -159,11 +189,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const isCompleted = Store.isRegistrationCompleted() && !Store.hasUnfinalizedChanges();
         const activeProvider = Store.getActiveProvider();
+        
+        let currentDate = null;
+        let skipDates = [];
+        if (isCompleted) {
+            let startDateStr = Store.getStartDate();
+            currentDate = startDateStr ? new Date(startDateStr) : new Date();
+            skipDates = Store.getSkipDates();
+        }
 
         if (providers.length === 0) {
             listContainer.innerHTML = '<div class="empty-state">No members added yet.</div>';
         } else {
             providers.forEach((provider, index) => {
+                let scheduledDateHtml = '';
+                if (isCompleted && !provider.isPaused) {
+                    while (skipDates.includes(getYYYYMMDD(currentDate))) {
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
+                    const dateStr = formatDate(currentDate);
+                    scheduledDateHtml = ` <span style="font-size: 0.85rem; color: var(--primary-color);">(${dateStr})</span>`;
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+
                 const item = document.createElement('div');
                 item.className = 'member-item';
                 
@@ -171,8 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Show status marks if present
                 let statusMark = '';
-                let statusClass = '';
-                if (isActive) {
+                let statusClass = provider.isPaused ? 'opacity-50' : '';
+                if (provider.isPaused) {
+                    statusMark = `<span class="status-badge" style="background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;"><i class="fa-solid fa-pause"></i> Paused</span>`;
+                } else if (isActive) {
                     statusMark = `<span class="status-badge" style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">Next</span>`;
                 } else if (provider.status === 'sent') {
                     statusMark = `<span class="status-badge sent" title="Sent on ${provider.statusDate}">✅</span>`;
@@ -192,12 +242,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="member-sl">${serialNum}</div>
                     <div class="member-info ${statusClass}">
                         <div class="member-name-list">
-                            ${provider.name} 
+                            ${provider.name} ${scheduledDateHtml}
                             ${statusMark}
                         </div>
                         <div class="member-phone-list">${provider.phone} ${altPhoneHtml}</div>
                     </div>
-                    ${isCompleted ? '' : `
+                    ${isCompleted ? `
+                    <div class="member-actions">
+                        <button class="btn-icon" onclick="togglePauseProvider('${provider.id}')" title="${provider.isPaused ? 'Resume' : 'Pause'}">
+                            <i class="fa-solid ${provider.isPaused ? 'fa-play' : 'fa-pause'}"></i>
+                        </button>
+                    </div>` : `
                     <div class="member-actions">
                         <button class="btn-icon" onclick="moveProvider(${index}, -1)" ${index === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
                         <button class="btn-icon" onclick="moveProvider(${index}, 1)" ${index === providers.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
@@ -212,15 +267,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnComplete = document.getElementById('btn-complete-registration');
         const btnAdd = document.getElementById('btn-add-member');
         const btnEditList = document.getElementById('btn-edit-list');
+        const btnExportSchedule = document.getElementById('btn-export-schedule');
 
         if (isCompleted) {
             btnComplete.style.display = 'none';
             if (btnAdd) btnAdd.style.display = 'none';
             if (btnEditList) btnEditList.style.display = 'inline-block';
+            if (btnExportSchedule) btnExportSchedule.style.display = 'block';
         } else {
             btnComplete.style.display = providers.length > 0 ? 'block' : 'none';
             if (btnAdd) btnAdd.style.display = 'inline-block';
             if (btnEditList) btnEditList.style.display = 'none';
+            if (btnExportSchedule) btnExportSchedule.style.display = 'none';
         }
     }
 
@@ -239,6 +297,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderMembers();
     };
 
+    window.togglePauseProvider = function(id) {
+        Store.togglePauseProvider(id);
+        renderHome();
+        renderMembers();
+    };
+
     window.editProvider = function(id) {
         const provider = Store.getProviders().find(p => p.id === id);
         if (provider) {
@@ -246,7 +310,25 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('member-name').value = provider.name;
             document.getElementById('member-phone').value = provider.phone;
             document.getElementById('member-alt-phone').value = provider.altPhone || '';
-            document.getElementById('group-insert-position').style.display = 'none';
+            
+            const positionGroup = document.getElementById('group-insert-position');
+            const positionSelect = document.getElementById('member-position');
+            positionSelect.innerHTML = '';
+            
+            const providers = Store.getProviders();
+            const currentIndex = providers.findIndex(p => p.id === id);
+            
+            for (let i = 0; i < providers.length; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = i + 1;
+                if (i === currentIndex) {
+                    opt.selected = true;
+                }
+                positionSelect.appendChild(opt);
+            }
+            positionGroup.style.display = 'block';
+            
             document.getElementById('modal-member-title').textContent = 'Edit Member';
             modalMember.classList.add('active');
         }
@@ -312,6 +394,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (editingProviderId) {
             Store.updateProvider(editingProviderId, { name, phone, altPhone });
+            
+            const currentProviders = Store.getProviders();
+            const oldIndex = currentProviders.findIndex(p => p.id === editingProviderId);
+            if (oldIndex !== position && oldIndex !== -1 && position >= 0 && position < currentProviders.length) {
+                const newProviders = [...currentProviders];
+                const [movedProvider] = newProviders.splice(oldIndex, 1);
+                newProviders.splice(position, 0, movedProvider);
+                Store.reorderProviders(newProviders.map(p => p.id));
+            }
+            
             checkScheduleUpdate();
         } else {
             Store.addProvider({ name, phone, altPhone }, position);
@@ -335,6 +427,43 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             modalUpdatePrompt.classList.add('active');
         }
+    });
+
+    document.getElementById('btn-export-schedule')?.addEventListener('click', () => {
+        const providers = Store.getProviders();
+        if (providers.length === 0) {
+            showToast("No members to export.");
+            return;
+        }
+
+        let startDateStr = Store.getStartDate();
+        let currentDate = startDateStr ? new Date(startDateStr) : new Date();
+        const skipDates = Store.getSkipDates();
+        
+        let csvContent = "Serial Number,Name,Primary Number,Alternative Number,Scheduled Date\n";
+        
+        providers.forEach((provider, index) => {
+            if (provider.isPaused) return; // Skip paused members from export
+            
+            while (skipDates.includes(getYYYYMMDD(currentDate))) {
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            const dateStr = formatDate(currentDate);
+            const escapeCSV = (str) => '"' + String(str).replace(/"/g, '""') + '"';
+            csvContent += `${index + 1},${escapeCSV(provider.name)},${escapeCSV(provider.phone)},${escapeCSV(provider.altPhone || '')},${escapeCSV(dateStr)}\n`;
+            currentDate.setDate(currentDate.getDate() + 1);
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `food_service_schedule_${getYYYYMMDD(new Date())}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("Schedule exported successfully!");
     });
 
     // Schedule Update Prompts

@@ -293,6 +293,18 @@ const Store = {
             this.data.providers[index].isPaused = !this.data.providers[index].isPaused;
             if (this.data.providers[index].isPaused && this.data.activeProviderId === id) {
                 this.advanceQueue('pending');
+            } else if (!this.data.providers[index].isPaused) {
+                // If unpausing, check if they should become active again
+                if (this.data.activeProviderId) {
+                    const activeIndex = this.data.providers.findIndex(p => p.id === this.data.activeProviderId);
+                    if (index < activeIndex && this.data.providers[index].status === 'pending') {
+                        this.data.activeProviderId = id;
+                    }
+                } else if (this.data.rotationEnded) {
+                    this.data.activeProviderId = id;
+                    this.data.rotationEnded = false;
+                }
+                this.save();
             } else {
                 this.save();
             }

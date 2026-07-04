@@ -238,7 +238,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (isActive) {
                     statusMark = `<span class="status-badge" style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">Next</span>`;
                 } else if (provider.status === 'sent') {
-                    statusMark = `<span class="status-badge sent" title="Sent on ${provider.statusDate}">✅</span>`;
+                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const todayStr = days[new Date().getDay()];
+                    if (provider.statusDate === todayStr) {
+                        statusMark = `<span class="status-badge sent" title="Sent on ${provider.statusDate}">✅</span> <button onclick="undoSendProvider('${provider.id}')" title="Undo Sent" style="background: none; border: none; padding: 0; margin-left: 0.2rem;"><span class="status-badge" style="background: #ffc107; color: #856404; padding: 2px 4px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;"><i class="fa-solid fa-rotate-left"></i> Undo</span></button>`;
+                    } else {
+                        statusMark = `<span class="status-badge sent" title="Sent on ${provider.statusDate}">✅</span>`;
+                    }
                     statusClass = 'opacity-75';
                 } else if (provider.status === 'skipped') {
                     statusMark = `<span class="status-badge skipped" title="Skipped on ${provider.statusDate}">⏭️</span>`;
@@ -323,6 +329,16 @@ document.addEventListener('DOMContentLoaded', () => {
         Store.togglePauseProvider(id);
         renderHome();
         renderMembers();
+    };
+
+    window.undoSendProvider = function(id) {
+        if (confirm("Are you sure you want to undo the 'Sent' status and make this person active again?")) {
+            Store.undoSendProvider(id);
+            renderHome();
+            renderMembers();
+            switchView('view-home');
+            showToast("Undo successful. You can now resend the message.");
+        }
     };
 
     window.editProvider = function(id) {
@@ -512,12 +528,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // === WhatsApp Modal Flow ===
+    function updateWhatsappButtonsState() {
+        const b = document.getElementById('receivers-breakfast').value;
+        const l = document.getElementById('receivers-lunch').value;
+        const d = document.getElementById('receivers-dinner').value;
+        const isValid = b !== '' && l !== '' && d !== '';
+        
+        document.getElementById('btn-open-whatsapp').disabled = !isValid;
+        const altBtn = document.getElementById('btn-open-whatsapp-alt');
+        if (altBtn) altBtn.disabled = !isValid;
+    }
+
+    document.getElementById('receivers-breakfast').addEventListener('change', updateWhatsappButtonsState);
+    document.getElementById('receivers-lunch').addEventListener('change', updateWhatsappButtonsState);
+    document.getElementById('receivers-dinner').addEventListener('change', updateWhatsappButtonsState);
+
     document.getElementById('btn-prepare-msg-home').addEventListener('click', () => {
         document.getElementById('wa-provider-name').textContent = tomorrowProvider.name;
         document.getElementById('receivers-breakfast').value = '';
         document.getElementById('receivers-lunch').value = '';
         document.getElementById('receivers-dinner').value = '';
         
+        updateWhatsappButtonsState();
+
         if (tomorrowProvider.altPhone) {
             document.getElementById('btn-open-whatsapp-alt').style.display = 'block';
         } else {
@@ -532,19 +565,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function prepareWhatsAppUrl(phoneStr) {
-        const breakfast = document.getElementById('receivers-breakfast').value.trim();
-        const lunch = document.getElementById('receivers-lunch').value.trim();
-        const dinner = document.getElementById('receivers-dinner').value.trim();
+        const breakfast = document.getElementById('receivers-breakfast').value;
+        const lunch = document.getElementById('receivers-lunch').value;
+        const dinner = document.getElementById('receivers-dinner').value;
 
         const template = Store.getSettings().messageTemplate;
         const dateStr = formatDate(tomorrowDateObj);
         
+        const bCount = breakfast === 'വേണ്ട' ? 0 : parseInt(breakfast || 0);
+        const lCount = lunch === 'വേണ്ട' ? 0 : parseInt(lunch || 0);
+        const dCount = dinner === 'വേണ്ട' ? 0 : parseInt(dinner || 0);
+        const total = bCount + lCount + dCount;
+        
         let message = template
             .replace('{{Date}}', dateStr)
-            .replace('{{Breakfast}}', breakfast || '0')
-            .replace('{{Lunch}}', lunch || '0')
-            .replace('{{Dinner}}', dinner || '0')
-            .replace('{{ReceiversCount}}', (parseInt(breakfast || 0) + parseInt(lunch || 0) + parseInt(dinner || 0)).toString());
+            .replace('{{Breakfast}}', breakfast)
+            .replace('{{Lunch}}', lunch)
+            .replace('{{Dinner}}', dinner)
+            .replace('{{ReceiversCount}}', total.toString());
         
         const phone = phoneStr.replace(/\D/g, ''); // strip non-digits
         return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;

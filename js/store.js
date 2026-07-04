@@ -314,6 +314,21 @@ const Store = {
         }
     },
 
+    undoSendProvider(id) {
+        const provider = this.data.providers.find(p => p.id === id);
+        if (provider) {
+            provider.status = 'pending';
+            delete provider.statusDate;
+            
+            if (this.data.rotationEnded) {
+                this.data.rotationEnded = false;
+            }
+            
+            this.data.activeProviderId = id;
+            this.save();
+        }
+    },
+
     // State
     getStartDate() {
         return this.data.startDate;

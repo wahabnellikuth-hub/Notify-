@@ -549,7 +549,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-open-whatsapp').addEventListener('click', () => {
         const waUrl = prepareWhatsAppUrl(tomorrowProvider.phone);
         window.open(waUrl, '_blank');
-        executeSendAndMark();
+        
+        if (tomorrowProvider.altPhone) {
+            showToast("Primary opened. Please message the Alt number to advance the queue.");
+        } else {
+            executeSendAndMark();
+        }
     });
 
     document.getElementById('btn-open-whatsapp-alt').addEventListener('click', () => {
@@ -558,9 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
         executeSendAndMark();
     });
 
-    document.getElementById('btn-mark-sent').addEventListener('click', () => {
-        executeSendAndMark();
-    });
+
 
 
     // === Settings View ===

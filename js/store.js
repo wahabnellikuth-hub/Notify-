@@ -207,18 +207,21 @@ const Store = {
 
     advanceQueue(status) {
         if (this.data.providers.length > 0) {
-            const current = this.getActiveProvider();
-            if (!current) return;
+            let currentProvider = null;
+            if (this.data.activeProviderId) {
+                currentProvider = this.data.providers.find(p => p.id === this.data.activeProviderId);
+            }
+            if (!currentProvider) return;
 
-            let currentIndex = this.data.providers.findIndex(p => p.id === current.id);
+            let currentIndex = this.data.providers.findIndex(p => p.id === currentProvider.id);
             if (currentIndex === -1) currentIndex = 0;
             
-            const currentProvider = this.data.providers[currentIndex];
-            if (status !== 'pending' && currentProvider) {
-                currentProvider.status = status;
+            const provider = this.data.providers[currentIndex];
+            if (status !== 'pending' && provider) {
+                provider.status = status;
                 const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                 const todayStr = days[new Date().getDay()];
-                currentProvider.statusDate = todayStr;
+                provider.statusDate = todayStr;
             }
 
             let nextIndex = currentIndex;

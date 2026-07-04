@@ -201,6 +201,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (providers.length === 0) {
             listContainer.innerHTML = '<div class="empty-state">No members added yet.</div>';
         } else {
+            const searchInput = document.getElementById('search-members');
+            const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
             providers.forEach((provider, index) => {
                 let scheduledDateHtml = '';
                 if (isCompleted && !provider.isPaused) {
@@ -212,10 +215,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentDate.setDate(currentDate.getDate() + 1);
                 }
 
+                if (searchQuery) {
+                    const matchName = provider.name.toLowerCase().includes(searchQuery);
+                    const matchPhone = provider.phone.includes(searchQuery);
+                    const matchAlt = provider.altPhone && provider.altPhone.includes(searchQuery);
+                    if (!matchName && !matchPhone && !matchAlt) return; // Skip rendering
+                }
+
                 const item = document.createElement('div');
                 item.className = 'member-item';
-                
                 const isActive = activeProvider && provider.id === activeProvider.id;
+                
+                if (isActive) {
+                    item.id = 'active-member-item';
+                }
                 
                 // Show status marks if present
                 let statusMark = '';
@@ -238,10 +251,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Sequential serial number
                 const serialNum = index + 1;
 
+                const fontWeight = isActive ? 'font-weight: 800; font-size: 1.05rem; color: var(--primary-dark);' : '';
+
                 item.innerHTML = `
                     <div class="member-sl">${serialNum}</div>
                     <div class="member-info ${statusClass}">
-                        <div class="member-name-list">
+                        <div class="member-name-list" style="${fontWeight}">
                             ${provider.name} ${scheduledDateHtml}
                             ${statusMark}
                         </div>
@@ -280,6 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (btnEditList) btnEditList.style.display = 'none';
             if (btnExportSchedule) btnExportSchedule.style.display = 'none';
         }
+
+        setTimeout(() => {
+            const activeItem = document.getElementById('active-member-item');
+            if (activeItem && document.getElementById('view-members').classList.contains('active')) {
+                activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 100);
     }
 
     // Global expose for inline onclick
@@ -746,6 +768,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initialize App
+    const searchMembersEl = document.getElementById('search-members');
+    if (searchMembersEl) {
+        searchMembersEl.addEventListener('input', () => {
+            renderMembers();
+        });
+    }
+
     renderHome();
     scheduleNextNotification();
     notifyAppOpened();

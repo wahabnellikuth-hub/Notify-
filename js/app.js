@@ -528,15 +528,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // === WhatsApp Modal Flow ===
+    function clearErrorStates() {
+        document.getElementById('btn-open-whatsapp').classList.remove('error-blink');
+        const altBtn = document.getElementById('btn-open-whatsapp-alt');
+        if (altBtn) altBtn.classList.remove('error-blink');
+        document.querySelectorAll('.select-arrow-indicator').forEach(el => el.remove());
+    }
+
     function updateWhatsappButtonsState() {
         const b = document.getElementById('receivers-breakfast').value;
         const l = document.getElementById('receivers-lunch').value;
         const d = document.getElementById('receivers-dinner').value;
         const isValid = b !== '' && l !== '' && d !== '';
         
-        document.getElementById('btn-open-whatsapp').disabled = !isValid;
-        const altBtn = document.getElementById('btn-open-whatsapp-alt');
-        if (altBtn) altBtn.disabled = !isValid;
+        if (isValid) {
+            clearErrorStates();
+        }
     }
 
     document.getElementById('receivers-breakfast').addEventListener('change', updateWhatsappButtonsState);
@@ -549,7 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('receivers-lunch').value = '';
         document.getElementById('receivers-dinner').value = '';
         
-        updateWhatsappButtonsState();
+        clearErrorStates();
 
         if (tomorrowProvider.altPhone) {
             document.getElementById('btn-open-whatsapp-alt').style.display = 'block';
@@ -606,7 +613,31 @@ document.addEventListener('DOMContentLoaded', () => {
         renderMembers();
     }
 
-    document.getElementById('btn-open-whatsapp').addEventListener('click', () => {
+    function triggerErrorState(btn) {
+        btn.classList.add('error-blink');
+        document.querySelectorAll('.select-arrow-indicator').forEach(el => el.remove());
+        
+        const arrowHtml = '<div class="select-arrow-indicator" style="color: red; text-align: center; font-size: 1.2rem; margin-top: 0.25rem; animation: bounceUp 1s infinite;"><i class="fa-solid fa-arrow-up"></i></div>';
+        
+        ['receivers-breakfast', 'receivers-lunch', 'receivers-dinner'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el.value === '') {
+                el.insertAdjacentHTML('afterend', arrowHtml);
+            }
+        });
+        
+        showToast("Please fill all Number of Food Receivers to proceed.");
+    }
+
+    document.getElementById('btn-open-whatsapp').addEventListener('click', (e) => {
+        const b = document.getElementById('receivers-breakfast').value;
+        const l = document.getElementById('receivers-lunch').value;
+        const d = document.getElementById('receivers-dinner').value;
+        if (b === '' || l === '' || d === '') {
+            triggerErrorState(e.currentTarget);
+            return;
+        }
+
         const waUrl = prepareWhatsAppUrl(tomorrowProvider.phone);
         window.open(waUrl, '_blank');
         
@@ -617,7 +648,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('btn-open-whatsapp-alt').addEventListener('click', () => {
+    document.getElementById('btn-open-whatsapp-alt').addEventListener('click', (e) => {
+        const b = document.getElementById('receivers-breakfast').value;
+        const l = document.getElementById('receivers-lunch').value;
+        const d = document.getElementById('receivers-dinner').value;
+        if (b === '' || l === '' || d === '') {
+            triggerErrorState(e.currentTarget);
+            return;
+        }
+
         const waUrl = prepareWhatsAppUrl(tomorrowProvider.altPhone);
         window.open(waUrl, '_blank');
         executeSendAndMark();

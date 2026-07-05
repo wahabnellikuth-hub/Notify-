@@ -605,3 +605,18 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
     -moz-appearance: textfield; /* Firefox */
 }
+
+/* Validation Alert Animation */
+@keyframes bounceUp {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+@keyframes blinkAlert {
+    0%, 100% { background-color: var(--danger-color); color: white; border-color: var(--danger-color); }
+    50% { background-color: #ffcccc; color: var(--danger-color); border-color: var(--danger-color); }
+}
+
+.error-blink {
+    animation: blinkAlert 0.8s infinite !important;
+}

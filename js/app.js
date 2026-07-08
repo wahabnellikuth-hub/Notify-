@@ -803,7 +803,41 @@ document.addEventListener('DOMContentLoaded', () => {
         Notification.requestPermission().then(permission => {
             updateNotificationStatusUI();
             if (permission === "granted") {
-                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                if ('showTrigger' in Notification.prototype && 'serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(reg => {
+                        const settings = Store.getSettings();
+                        const [hours, minutes] = settings.reminderTime.split(':');
+                        let targetTime = new Date();
+                        targetTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                        
+                        if (targetTime < new Date()) {
+                            targetTime.setDate(targetTime.getDate() + 1);
+                        }
+
+                        reg.getNotifications({tag: 'food-reminder'}).then(notifications => {
+                            notifications.forEach(n => n.close());
+                        });
+
+                        reg.showNotification("Tomorrow's food reminder is ready.", {
+                            body: "Tap here to prepare the WhatsApp message.",
+                            icon: "/icon.png",
+                            vibrate: [200, 100, 200],
+                            tag: 'food-reminder',
+                            renotify: true,
+                            requireInteraction: true,
+                            showTrigger: new TimestampTrigger(targetTime.getTime())
+                        }).catch(err => {
+                            console.error("Failed to schedule notification trigger", err);
+                            if (navigator.serviceWorker.controller) {
+                                navigator.serviceWorker.controller.postMessage({
+                                    type: 'SCHEDULE_NOTIFICATION',
+                                    time: settings.reminderTime,
+                                    lastSentDate: Store.getLastSentDate()
+                                });
+                            }
+                        });
+                    });
+                } else if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                     navigator.serviceWorker.controller.postMessage({
                         type: 'SCHEDULE_NOTIFICATION',
                         time: Store.getSettings().reminderTime,
@@ -813,6 +847,56 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    document.getElementById('btn-download-calendar')?.addEventListener('click', () => {
+        const settings = Store.getSettings();
+        const [hours, minutes] = settings.reminderTime.split(':');
+        
+        let targetTime = new Date();
+        targetTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        
+        if (targetTime < new Date()) {
+            targetTime.setDate(targetTime.getDate() + 1);
+        }
+
+        const getICSDateString = (date) => {
+            return date.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
+        };
+
+        const dtstart = getICSDateString(targetTime);
+        const endTime = new Date(targetTime.getTime() + 15 * 60000);
+        const dtend = getICSDateString(endTime);
+
+        const url = window.location.href.split('?')[0];
+
+        const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Food Service Reminder//EN
+BEGIN:VEVENT
+UID:${new Date().getTime()}@foodservice
+DTSTAMP:${getICSDateString(new Date())}
+DTSTART:${dtstart}
+DTEND:${dtend}
+RRULE:FREQ=DAILY
+SUMMARY:Send Food Service Reminder
+DESCRIPTION:Time to send tomorrow's food service reminder! Open the app here: ${url}
+BEGIN:VALARM
+TRIGGER:-PT0M
+ACTION:DISPLAY
+DESCRIPTION:Send Food Service Reminder
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'food_service_daily_alarm.ics';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("Calendar alarm downloaded! Please open the file to add it.");
+    });
 
     // === Notifications & PWA ===
     function notifyAppOpened() {

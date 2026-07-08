@@ -123,10 +123,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let lastAlarmDateStr = null;
+    let currentAudioElement = null;
 
     function playAlarm() {
+        stopAlarm();
+
+        const customAudioBase64 = localStorage.getItem('food_service_custom_audio');
+        const settings = Store.getSettings();
+        const repetition = settings.alarmRepetition || '3';
+
+        if (customAudioBase64) {
+            try {
+                currentAudioElement = new Audio(customAudioBase64);
+                if (repetition === 'continuous') {
+                    currentAudioElement.loop = true;
+                } else {
+                    let playCount = 0;
+                    const maxPlays = parseInt(repetition, 10);
+                    currentAudioElement.addEventListener('ended', function() {
+                        playCount++;
+                        if (playCount < maxPlays) {
+                            this.currentTime = 0;
+                            this.play().catch(e => console.error("Audio replay failed:", e));
+                        }
+                    });
+                }
+                currentAudioElement.play().catch(e => {
+                    console.error("Custom audio play failed:", e);
+                    playFallbackBeep(repetition);
+                });
+            } catch(e) {
+                console.error("Error setting up custom audio", e);
+                playFallbackBeep(repetition);
+            }
+        } else {
+            playFallbackBeep(repetition);
+        }
+    }
+    
+    function playFallbackBeep(repetition) {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const maxPlays = repetition === 'continuous' ? 999 : parseInt(repetition, 10);
+            
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
@@ -137,17 +176,39 @@ document.addEventListener('DOMContentLoaded', () => {
             oscillator.frequency.value = 880; // A5 note
             
             const now = audioCtx.currentTime;
-            for(let i=0; i<3; i++) {
-                gainNode.gain.setValueAtTime(0, now + i*0.5);
-                gainNode.gain.linearRampToValueAtTime(1, now + i*0.5 + 0.05);
-                gainNode.gain.setValueAtTime(1, now + i*0.5 + 0.2);
-                gainNode.gain.linearRampToValueAtTime(0, now + i*0.5 + 0.25);
+            for(let p=0; p<maxPlays; p++) {
+                const offset = p * 1.5;
+                for(let i=0; i<3; i++) {
+                    gainNode.gain.setValueAtTime(0, now + offset + i*0.5);
+                    gainNode.gain.linearRampToValueAtTime(1, now + offset + i*0.5 + 0.05);
+                    gainNode.gain.setValueAtTime(1, now + offset + i*0.5 + 0.2);
+                    gainNode.gain.linearRampToValueAtTime(0, now + offset + i*0.5 + 0.25);
+                }
             }
             
             oscillator.start(now);
-            oscillator.stop(now + 1.5);
+            oscillator.stop(now + (maxPlays * 1.5));
+            
+            currentAudioElement = {
+                pause: () => {
+                    if (audioCtx.state === 'running') {
+                        audioCtx.close();
+                    }
+                }
+            };
+            
         } catch (e) {
             console.error("Audio play failed:", e);
+        }
+    }
+    
+    function stopAlarm() {
+        if (currentAudioElement) {
+            currentAudioElement.pause();
+            if (currentAudioElement.currentTime !== undefined) {
+                currentAudioElement.currentTime = 0;
+            }
+            currentAudioElement = null;
         }
     }
 
@@ -709,6 +770,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const settings = Store.getSettings();
         document.getElementById('setting-reminder-time').value = settings.reminderTime;
         document.getElementById('setting-alarm-enabled').checked = settings.alarmEnabled !== false;
+        document.getElementById('setting-alarm-repetition').value = settings.alarmRepetition || '3';
+        
+        const hasCustomAudio = !!localStorage.getItem('food_service_custom_audio');
+        const btnClearAudio = document.getElementById('btn-clear-custom-audio');
+        btnClearAudio.style.display = hasCustomAudio ? 'inline-block' : 'none';
+        btnClearAudio.onclick = (e) => {
+            e.preventDefault();
+            localStorage.removeItem('food_service_custom_audio');
+            document.getElementById('setting-custom-audio').value = '';
+            btnClearAudio.style.display = 'none';
+            showToast("Custom audio removed.");
+        };
+
         document.getElementById('setting-template').value = settings.messageTemplate;
         document.getElementById('setting-organizer-phone').value = settings.organizerNumber || '';
         document.getElementById('setting-start-date').value = Store.getStartDate() || '';
@@ -759,6 +833,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-save-settings').addEventListener('click', () => {
         const reminderTime = document.getElementById('setting-reminder-time').value;
         const alarmEnabled = document.getElementById('setting-alarm-enabled').checked;
+        const alarmRepetition = document.getElementById('setting-alarm-repetition').value;
         const messageTemplate = document.getElementById('setting-template').value;
         const organizerNumber = document.getElementById('setting-organizer-phone').value.trim();
         const startDate = document.getElementById('setting-start-date').value;
@@ -766,7 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const loopTo = document.getElementById('setting-loop-to').value;
         const isOrganizer = document.getElementById('setting-is-organizer').checked;
 
-        Store.updateSettings({ reminderTime, alarmEnabled, messageTemplate, organizerNumber, customStartProviderId, loopTo });
+        Store.updateSettings({ reminderTime, alarmEnabled, alarmRepetition, messageTemplate, organizerNumber, customStartProviderId, loopTo });
         if (startDate) {
             Store.setStartDate(startDate);
             Store.setRegistrationCompleted(true);
@@ -778,7 +853,23 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reschedule notification
         scheduleNextNotification();
 
-        showToast("Settings saved!");
+        const audioInput = document.getElementById('setting-custom-audio');
+        if (audioInput.files && audioInput.files[0]) {
+            const file = audioInput.files[0];
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                showToast("Audio file too large (Max 2MB). Other settings saved.");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                localStorage.setItem('food_service_custom_audio', e.target.result);
+                document.getElementById('btn-clear-custom-audio').style.display = 'inline-block';
+                showToast("Settings and custom audio saved!");
+            };
+            reader.readAsDataURL(file);
+        } else {
+            showToast("Settings saved!");
+        }
     });
 
     document.getElementById('btn-force-start').addEventListener('click', () => {

@@ -24,7 +24,8 @@ const defaultState = {
         organizerNumber: '',
         loopTo: 'first', // 'first' or 'custom'
         customStartProviderId: null,
-        alarmEnabled: true
+        alarmEnabled: true,
+        alarmRepetition: '3' // '1', '3', '5', or 'continuous'
     },
     registrationCompleted: false,
     hasUnfinalizedChanges: false,

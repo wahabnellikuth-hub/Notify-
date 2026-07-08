@@ -143,6 +143,11 @@
                     <input type="time" id="setting-reminder-time" class="form-control">
                 </div>
                 
+                <div class="form-group" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.75rem; background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #e9ecef;">
+                    <input type="checkbox" id="setting-alarm-enabled" style="width: auto; transform: scale(1.2); cursor: pointer; margin: 0;">
+                    <label for="setting-alarm-enabled" style="margin-bottom: 0; cursor: pointer; font-weight: bold;">Enable Audio Alarm at Reminder Time</label>
+                </div>
+                
                 <div class="form-group">
                     <label for="setting-start-date">Rotation Start Date</label>
                     <input type="date" id="setting-start-date" class="form-control">
@@ -188,13 +193,7 @@
                     </label>
                     <div id="notification-status" style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;"></div>
                     
-                    <hr style="margin: 1rem 0; border: 0; border-top: 1px solid #dee2e6;">
-                    <div style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem;">
-                        If popup notifications are not working on your phone, download this calendar alarm. It is 100% reliable on both iPhone and Android.
-                    </div>
-                    <button id="btn-download-calendar" class="btn btn-outline w-100" style="border-color: var(--primary); color: var(--primary);">
-                        <i class="fa-regular fa-calendar-plus"></i> Add Daily Calendar Alarm
-                    </button>
+
                 </div>
 
                 <button id="btn-save-settings" class="btn btn-primary w-100 mt-2">Save Settings</button>

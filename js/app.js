@@ -122,6 +122,35 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCountdown();
     }
 
+    let lastAlarmDateStr = null;
+
+    function playAlarm() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 880; // A5 note
+            
+            const now = audioCtx.currentTime;
+            for(let i=0; i<3; i++) {
+                gainNode.gain.setValueAtTime(0, now + i*0.5);
+                gainNode.gain.linearRampToValueAtTime(1, now + i*0.5 + 0.05);
+                gainNode.gain.setValueAtTime(1, now + i*0.5 + 0.2);
+                gainNode.gain.linearRampToValueAtTime(0, now + i*0.5 + 0.25);
+            }
+            
+            oscillator.start(now);
+            oscillator.stop(now + 1.5);
+        } catch (e) {
+            console.error("Audio play failed:", e);
+        }
+    }
+
     function updateCountdown() {
         const settings = Store.getSettings();
         const now = new Date();
@@ -142,6 +171,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('reminder-countdown').textContent = 
             `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            
+        // Check if exact minute matches for alarm
+        if (settings.alarmEnabled !== false && now.getHours() === parseInt(hours) && now.getMinutes() === parseInt(minutes)) {
+            const todayStr = getYYYYMMDD(now);
+            if (lastAlarmDateStr !== todayStr) {
+                lastAlarmDateStr = todayStr;
+                playAlarm();
+                showToast("It's time to send the reminder!");
+            }
+        }
     }
 
     setInterval(updateCountdown, 1000);
@@ -669,6 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderSettings() {
         const settings = Store.getSettings();
         document.getElementById('setting-reminder-time').value = settings.reminderTime;
+        document.getElementById('setting-alarm-enabled').checked = settings.alarmEnabled !== false;
         document.getElementById('setting-template').value = settings.messageTemplate;
         document.getElementById('setting-organizer-phone').value = settings.organizerNumber || '';
         document.getElementById('setting-start-date').value = Store.getStartDate() || '';
@@ -718,6 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-save-settings').addEventListener('click', () => {
         const reminderTime = document.getElementById('setting-reminder-time').value;
+        const alarmEnabled = document.getElementById('setting-alarm-enabled').checked;
         const messageTemplate = document.getElementById('setting-template').value;
         const organizerNumber = document.getElementById('setting-organizer-phone').value.trim();
         const startDate = document.getElementById('setting-start-date').value;
@@ -725,7 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const loopTo = document.getElementById('setting-loop-to').value;
         const isOrganizer = document.getElementById('setting-is-organizer').checked;
 
-        Store.updateSettings({ reminderTime, messageTemplate, organizerNumber, customStartProviderId, loopTo });
+        Store.updateSettings({ reminderTime, alarmEnabled, messageTemplate, organizerNumber, customStartProviderId, loopTo });
         if (startDate) {
             Store.setStartDate(startDate);
             Store.setRegistrationCompleted(true);
@@ -848,55 +889,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.getElementById('btn-download-calendar')?.addEventListener('click', () => {
-        const settings = Store.getSettings();
-        const [hours, minutes] = settings.reminderTime.split(':');
-        
-        let targetTime = new Date();
-        targetTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        
-        if (targetTime < new Date()) {
-            targetTime.setDate(targetTime.getDate() + 1);
-        }
 
-        const getICSDateString = (date) => {
-            return date.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
-        };
-
-        const dtstart = getICSDateString(targetTime);
-        const endTime = new Date(targetTime.getTime() + 15 * 60000);
-        const dtend = getICSDateString(endTime);
-
-        const url = window.location.href.split('?')[0];
-
-        const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Food Service Reminder//EN
-BEGIN:VEVENT
-UID:${new Date().getTime()}@foodservice
-DTSTAMP:${getICSDateString(new Date())}
-DTSTART:${dtstart}
-DTEND:${dtend}
-RRULE:FREQ=DAILY
-SUMMARY:Send Food Service Reminder
-DESCRIPTION:Time to send tomorrow's food service reminder! Open the app here: ${url}
-BEGIN:VALARM
-TRIGGER:-PT0M
-ACTION:DISPLAY
-DESCRIPTION:Send Food Service Reminder
-END:VALARM
-END:VEVENT
-END:VCALENDAR`;
-
-        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'food_service_daily_alarm.ics';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast("Calendar alarm downloaded! Please open the file to add it.");
-    });
 
     // === Notifications & PWA ===
     function notifyAppOpened() {

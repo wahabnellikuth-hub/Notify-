@@ -23,7 +23,8 @@ const defaultState = {
         messageTemplate: DEFAULT_TEMPLATE,
         organizerNumber: '',
         loopTo: 'first', // 'first' or 'custom'
-        customStartProviderId: null
+        customStartProviderId: null,
+        alarmEnabled: true
     },
     registrationCompleted: false,
     hasUnfinalizedChanges: false,

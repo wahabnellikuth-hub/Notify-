@@ -957,6 +957,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             tag: 'food-reminder',
                             renotify: true,
                             requireInteraction: true,
+                            actions: [
+                                { action: 'stop_alarm', title: '🔕 Stop Alarm' }
+                            ],
                             showTrigger: new TimestampTrigger(targetTime.getTime())
                         }).catch(err => {
                             console.error("Failed to schedule notification trigger", err);
@@ -1001,8 +1004,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             notifyAppOpened();
+            stopAlarm();
         }
     });
+
+    window.addEventListener('focus', () => {
+        stopAlarm();
+    });
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'STOP_ALARM') {
+                stopAlarm();
+            }
+        });
+    }
 
     // === Global Sync Event ===
     window.addEventListener('store-synced', () => {

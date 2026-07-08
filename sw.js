@@ -1,4 +1,4 @@
-const CACHE_NAME = 'food-service-v20';
+const CACHE_NAME = 'food-service-v21';
 const ASSETS = [
     '/',
     '/index.html',
@@ -103,7 +103,10 @@ function checkTimeAndNotify() {
             vibrate: [200, 100, 200],
             tag: 'food-reminder',
             renotify: true,
-            requireInteraction: true
+            requireInteraction: true,
+            actions: [
+                { action: 'stop_alarm', title: '🔕 Stop Alarm' }
+            ]
         });
     }
 
@@ -119,6 +122,18 @@ self.addEventListener('notificationclose', event => {
 
 self.addEventListener('notificationclick', event => {
     event.notification.close();
+    
+    if (event.action === 'stop_alarm') {
+        event.waitUntil(
+            clients.matchAll({ type: 'window' }).then(windowClients => {
+                for (let client of windowClients) {
+                    client.postMessage({ type: 'STOP_ALARM' });
+                }
+            })
+        );
+        return;
+    }
+
     event.waitUntil(
         clients.matchAll({ type: 'window' }).then(windowClients => {
             // Check if there is already a window/tab open with the target URL

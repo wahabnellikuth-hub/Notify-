@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const completeCard = document.getElementById('rotation-complete-card');
         const btnPrepare = document.getElementById('btn-prepare-msg-home');
         const btnSkipTomorrow = document.getElementById('btn-skip-tomorrow');
+        const btnCancelSkipTomorrow = document.getElementById('btn-cancel-skip-tomorrow');
         const btnSkipProvider = document.getElementById('btn-skip-provider');
 
         if (!Store.isRegistrationCompleted() || Store.getProviders().length === 0) {
@@ -83,7 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('provider-name').textContent = "Registration Incomplete";
             document.getElementById('provider-phone').textContent = "Complete setup in Members tab";
             btnPrepare.disabled = true;
+            btnSkipTomorrow.style.display = 'block';
             btnSkipTomorrow.disabled = true;
+            btnCancelSkipTomorrow.style.display = 'none';
             btnSkipProvider.disabled = true;
             return;
         }
@@ -107,7 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('provider-name').textContent = "No reminder for tomorrow.";
             document.getElementById('provider-phone').textContent = "(Day Skipped)";
             btnPrepare.disabled = true;
-            btnSkipTomorrow.disabled = true;
+            btnSkipTomorrow.style.display = 'none';
+            btnCancelSkipTomorrow.style.display = 'block';
             btnSkipProvider.disabled = true;
             tomorrowProvider = null;
         } else {
@@ -115,6 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('provider-name').textContent = tomorrowProvider ? tomorrowProvider.name : "None";
             document.getElementById('provider-phone').textContent = tomorrowProvider ? tomorrowProvider.phone : "--";
             btnPrepare.disabled = !tomorrowProvider;
+            btnSkipTomorrow.style.display = 'block';
+            btnCancelSkipTomorrow.style.display = 'none';
             btnSkipTomorrow.disabled = false;
             btnSkipProvider.disabled = !tomorrowProvider;
         }
@@ -266,7 +272,15 @@ document.addEventListener('DOMContentLoaded', () => {
             Store.addSkipDate(getYYYYMMDD(tomorrowDateObj));
             showToast("Tomorrow's service skipped.");
             renderHome();
+            renderMembers();
         }
+    });
+
+    document.getElementById('btn-cancel-skip-tomorrow').addEventListener('click', () => {
+        Store.removeSkipDate(getYYYYMMDD(tomorrowDateObj));
+        showToast("Skip Day cancelled.");
+        renderHome();
+        renderMembers();
     });
 
     // Skip Provider

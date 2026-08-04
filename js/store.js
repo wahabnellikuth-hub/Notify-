@@ -353,6 +353,13 @@ const Store = {
         }
     },
 
+    removeSkipDate(dateStr) {
+        if (this.data.skipDates) {
+            this.data.skipDates = this.data.skipDates.filter(d => d !== dateStr);
+            this.save();
+        }
+    },
+
     isRegistrationCompleted() {
         return this.data.registrationCompleted;
     },

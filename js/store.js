@@ -342,6 +342,61 @@ const Store = {
         }
     },
 
+    autoCatchUpProviders() {
+        if (!this.data.registrationCompleted || !this.data.providers || this.data.providers.length === 0) return false;
+
+        let startDateStr = this.getStartDate();
+        if (!startDateStr) return false;
+
+        const getYYYYMMDD = (date) => {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        };
+
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = getYYYYMMDD(tomorrow);
+
+        let changed = false;
+        let loopLimit = this.data.providers.length * 2; 
+
+        while (loopLimit > 0) {
+            loopLimit--;
+            
+            const activeProvider = this.getActiveProvider();
+            if (!activeProvider) break;
+
+            let currentDate = new Date(startDateStr);
+            const skipDates = this.getSkipDates();
+            let activeDateStr = null;
+            
+            for (const provider of this.data.providers) {
+                if (provider.isPaused) continue;
+                
+                while (skipDates.includes(getYYYYMMDD(currentDate))) {
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+                
+                if (provider.id === activeProvider.id) {
+                    activeDateStr = getYYYYMMDD(currentDate);
+                    break;
+                }
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            if (!activeDateStr) break;
+            
+            if (activeDateStr < tomorrowStr) {
+                this.advanceQueue('skipped');
+                changed = true;
+            } else {
+                break;
+            }
+        }
+        
+        return changed;
+    },
+
     // State
     getStartDate() {
         return this.data.startDate;

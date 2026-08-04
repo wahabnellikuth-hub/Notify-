@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const todayStr = getYYYYMMDD(new Date());
         if (todayStr !== lastCheckedDay) {
             lastCheckedDay = todayStr;
-            if (Store.autoCatchUpSkipDates()) {
+            if (Store.autoCatchUpProviders()) {
                 renderHome();
                 renderMembers();
             }
@@ -1096,7 +1096,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    Store.autoCatchUpSkipDates();
+    Store.autoCatchUpProviders();
     renderHome();
     scheduleNextNotification();
     notifyAppOpened();

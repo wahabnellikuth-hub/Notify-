@@ -31,6 +31,7 @@ const defaultState = {
     hasUnfinalizedChanges: false,
     rotationEnded: false,
     lastSentDate: null,
+    lastSkippedProviderId: null,
     lastUpdated: 0
 };
 
@@ -224,6 +225,12 @@ const Store = {
                 const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                 const todayStr = days[new Date().getDay()];
                 provider.statusDate = todayStr;
+                
+                if (status === 'skipped') {
+                    this.data.lastSkippedProviderId = provider.id;
+                } else if (status === 'sent') {
+                    this.data.lastSkippedProviderId = null;
+                }
             }
 
             let nextIndex = currentIndex;
@@ -322,6 +329,10 @@ const Store = {
             provider.status = 'pending';
             delete provider.statusDate;
             
+            if (this.data.lastSkippedProviderId === id) {
+                this.data.lastSkippedProviderId = null;
+            }
+            
             if (this.data.rotationEnded) {
                 this.data.rotationEnded = false;
             }
@@ -392,6 +403,16 @@ const Store = {
     markSent(dateStr) {
         this.data.lastSentDate = dateStr;
         this.save();
+    },
+
+    getLastSkippedProvider() {
+        if (this.data.lastSkippedProviderId) {
+            const p = this.data.providers.find(prov => prov.id === this.data.lastSkippedProviderId);
+            if (p && p.status === 'skipped') {
+                return p;
+            }
+        }
+        return null;
     },
 
     // Settings

@@ -125,11 +125,21 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSkipProvider.disabled = !tomorrowProvider;
         }
 
+        const btnCancelSkipProvider = document.getElementById('btn-cancel-skip-provider');
+        const lastSkipped = Store.getLastSkippedProvider();
+        if (lastSkipped) {
+            btnCancelSkipProvider.style.display = 'block';
+            document.getElementById('skipped-provider-name').textContent = lastSkipped.name;
+        } else {
+            btnCancelSkipProvider.style.display = 'none';
+        }
+
         updateCountdown();
     }
 
     let lastAlarmDateStr = null;
     let currentAudioElement = null;
+    let lastCheckedDay = getYYYYMMDD(new Date());
 
     function playAlarm() {
         stopAlarm();
@@ -219,6 +229,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateCountdown() {
+        const todayStr = getYYYYMMDD(new Date());
+        if (todayStr !== lastCheckedDay) {
+            lastCheckedDay = todayStr;
+            if (Store.autoCatchUpSkipDates()) {
+                renderHome();
+                renderMembers();
+            }
+        }
+
         const settings = Store.getSettings();
         const now = new Date();
         const [hours, minutes] = settings.reminderTime.split(':');
@@ -293,6 +312,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Cancel Skip Provider
+    document.getElementById('btn-cancel-skip-provider').addEventListener('click', () => {
+        const lastSkipped = Store.getLastSkippedProvider();
+        if (lastSkipped) {
+            Store.undoSendProvider(lastSkipped.id);
+            showToast("Skipped provider restored.");
+            renderHome();
+            renderMembers();
+        }
+    });
+
 
     // === Members View ===
     function renderMembers() {
@@ -361,7 +391,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     statusClass = 'opacity-75';
                 } else if (provider.status === 'skipped') {
-                    statusMark = `<span class="status-badge skipped" title="Skipped on ${provider.statusDate}">⏭️</span>`;
+                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const todayStr = days[new Date().getDay()];
+                    if (provider.statusDate === todayStr) {
+                        statusMark = `<span class="status-badge skipped" title="Skipped on ${provider.statusDate}">⏭️ Skipped</span> <button onclick="undoSkipProvider('${provider.id}')" title="Undo Skip" style="background: none; border: none; padding: 0; margin-left: 0.2rem;"><span class="status-badge" style="background: #ffc107; color: #856404; padding: 2px 4px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;"><i class="fa-solid fa-rotate-left"></i> Undo</span></button>`;
+                    } else {
+                        statusMark = `<span class="status-badge skipped" title="Skipped on ${provider.statusDate}">⏭️ Skipped</span>`;
+                    }
                     statusClass = 'opacity-75';
                 }
 
@@ -452,6 +488,16 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMembers();
             switchView('view-home');
             showToast("Undo successful. You can now resend the message.");
+        }
+    };
+
+    window.undoSkipProvider = function(id) {
+        if (confirm("Are you sure you want to undo the 'Skipped' status and make this person active again?")) {
+            Store.undoSendProvider(id);
+            renderHome();
+            renderMembers();
+            switchView('view-home');
+            showToast("Undo successful. Provider is active again.");
         }
     };
 
@@ -1050,6 +1096,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    Store.autoCatchUpSkipDates();
     renderHome();
     scheduleNextNotification();
     notifyAppOpened();

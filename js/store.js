@@ -14,7 +14,374 @@ const DEFAULT_TEMPLATE = `السلام عليكم ورحمة الله وبركا
 جزاكم الله خيرًا`;
 
 const defaultState = {
-    providers: [],
+    providers: [
+    {
+        "id": "17860143824141",
+        "name": "Shukkoor Ka Kk",
+        "phone": "9946656351",
+        "status": "pending"
+    },
+    {
+        "id": "17860143824142",
+        "name": "Salam ka Nalakath (Hous)",
+        "phone": "+91 97441 33363",
+        "status": "pending"
+    },
+    {
+        "id": "17860143824143",
+        "name": "Rasheed ka Nalakath",
+        "phone": "+971 50 825 9079",
+        "status": "pending"
+    },
+    {
+        "id": "17860143824144",
+        "name": "Ali ka Pp",
+        "phone": "+91 98478 80168",
+        "status": "pending"
+    },
+    {
+        "id": "17860143824145",
+        "name": "Hamza Haji C",
+        "phone": "+91 90742 76406",
+        "status": "pending"
+    },
+    {
+        "id": "17860143824146",
+        "name": "Swamad C",
+        "phone": "+91 75589 90139",
+        "status": "pending"
+    },
+    {
+        "id": "17860143824147",
+        "name": "Rasheed KS",
+        "phone": "8157973858",
+        "status": "pending"
+    },
+    {
+        "id": "17860143824148",
+        "name": "Shafi KS",
+        "phone": "+91 94964 06047",
+        "status": "pending"
+    },
+    {
+        "id": "17860143824149",
+        "name": "Anfal Ks",
+        "phone": "7907662471",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241410",
+        "name": "Hamza Musliyar .PP",
+        "phone": "9562157005",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241411",
+        "name": "Abdul Qadir.PP",
+        "phone": "+91 82811 80644",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241412",
+        "name": "Shajeer ks",
+        "phone": "+91 75109 94667",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241413",
+        "name": "Abbas Ks",
+        "phone": "+91 88484 76956",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241414",
+        "name": "Muhammad Ali Cp",
+        "phone": "+91 96058 78643",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241415",
+        "name": "Muhammad kutti PP",
+        "phone": "+91 96459 05911",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241416",
+        "name": "Naushad.Pp",
+        "phone": "+91 89215 15605",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241417",
+        "name": "Ibrahim.Pp",
+        "phone": "+91 98471 76103",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241418",
+        "name": "Hamzu .Pp",
+        "phone": "+91 79091 24032",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241419",
+        "name": "Kunchu Hamzu.PP",
+        "phone": "9544524565",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241420",
+        "name": "Muhammad.PP",
+        "phone": "91 9562400146",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241421",
+        "name": "Shaukath.m(Mubaris)",
+        "phone": "+91 90485 26609",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241422",
+        "name": "Muhammad Ali.P",
+        "phone": "9847948696",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241423",
+        "name": "Saleem N.",
+        "phone": "+91 75940 00337",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241424",
+        "name": "Basheer.N(shahabad)",
+        "phone": "+91 95447 61059",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241425",
+        "name": "Latheef.pp (Muthu)",
+        "phone": "+91 98478 58371",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241426",
+        "name": "Hakeem PP",
+        "phone": "+91 95267 92390",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241427",
+        "name": "Jabir PP",
+        "phone": "+91 97474 60543",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241428",
+        "name": "Ishaque PP",
+        "phone": "+91 99471 14321",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241429",
+        "name": "Ubaid KS",
+        "phone": "+91 86067 21715",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241430",
+        "name": "Salam KS",
+        "phone": "91 94472 06893",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241431",
+        "name": "Abdul Kareem",
+        "phone": "+91 98475 48281",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241432",
+        "name": "Nusrath (ajvad)",
+        "phone": "9544343163",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241433",
+        "name": "Nisar .K",
+        "phone": "8113094348",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241434",
+        "name": "Faisal .Pp",
+        "phone": "9747769905",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241435",
+        "name": "Ashraf.Kk",
+        "phone": "7593075611",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241436",
+        "name": "Shareef KS",
+        "phone": "+91 75580 02301",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241437",
+        "name": "Shabeeb Saqufi",
+        "phone": "+91 97462 44565",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241438",
+        "name": "Basheer PP(ijaz)",
+        "phone": "+91 99469 86742",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241439",
+        "name": "Ali haji ks",
+        "phone": "+91 94008 93291",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241440",
+        "name": "Rafi ks",
+        "phone": "+91 98468 48598",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241441",
+        "name": "Ibrahim sir ks",
+        "phone": "+91 98953 13738",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241442",
+        "name": "Nisar .kk(mushiya)",
+        "phone": "6238364012",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241443",
+        "name": "Ubaid MM",
+        "phone": "+91 81369 45759",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241444",
+        "name": "Mansoor .MM(mubaris)",
+        "phone": "91 9048526609",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241445",
+        "name": "Ubaid P.(Manu)",
+        "phone": "9778089451",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241446",
+        "name": "Sidheeq M.",
+        "phone": "8921439073",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241447",
+        "name": "Vappu Haji",
+        "phone": "8075963830",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241448",
+        "name": "Rafeeq .M",
+        "phone": "9747411381",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241449",
+        "name": "Ibrahim N(sahul)",
+        "phone": "9605215981",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241450",
+        "name": "Haris(Ashiq)N",
+        "phone": "+91 79022 57940",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241451",
+        "name": "Muhammad Ali N.(Rifa)",
+        "phone": "+91 95620 50856",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241452",
+        "name": "Abdulla kk",
+        "phone": "9061742312",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241453",
+        "name": "Daleef .KK",
+        "phone": "7909119307",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241454",
+        "name": "Riyas M",
+        "phone": "+91 98472 94489",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241455",
+        "name": "Ansar kk",
+        "phone": "8111915414",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241456",
+        "name": "Ramla .P",
+        "phone": "9544626713",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241457",
+        "name": "Abu M",
+        "phone": "9048045492",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241458",
+        "name": "Alavi C (Anfas)",
+        "phone": "9656302023",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241459",
+        "name": "Zakariyya Latheefi",
+        "phone": "9539611452",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241460",
+        "name": "Shareef kk",
+        "phone": "8606765918",
+        "status": "pending"
+    },
+    {
+        "id": "178601438241461",
+        "name": "Latheef kk",
+        "phone": "9961264533",
+        "status": "pending"
+    }
+],
     activeProviderId: null,
     startDate: null,
     skipDates: [], // Array of YYYY-MM-DD
@@ -56,7 +423,7 @@ const Store = {
         }
         
         // Fetch from Firebase in the background
-        this.fetchFromFirebase();
+        if (this.data.providers.length === 0) { this.data.providers = defaultState.providers; this.data.registrationCompleted = true; this.data.startDate = '2026-07-04'; this.data.activeProviderId = this.data.providers[0].id; this.save(); } this.fetchFromFirebase();
         
         // Poll Firebase periodically for global updates (every 30 seconds)
         setInterval(() => {
@@ -240,7 +607,12 @@ const Store = {
             while (loopCount < this.data.providers.length) {
                 nextIndex++;
                 if (nextIndex >= this.data.providers.length) {
-                    break;
+                    if (this.data.settings.loopTo === 'custom' && this.data.settings.customStartProviderId) {
+                        const customIndex = this.data.providers.findIndex(p => p.id === this.data.settings.customStartProviderId);
+                        nextIndex = customIndex !== -1 ? customIndex : 0;
+                    } else {
+                        nextIndex = 0;
+                    }
                 }
                 if (!this.data.providers[nextIndex].isPaused) {
                     found = true;
@@ -257,6 +629,16 @@ const Store = {
                 this.data.activeProviderId = nextProvider.id;
                 nextProvider.status = 'pending';
                 delete nextProvider.statusDate;
+                
+                // If we looped back to the beginning, reset all other providers' statuses
+                if (nextIndex <= currentIndex && this.data.providers.length > 1) {
+                    this.data.providers.forEach(p => {
+                        if (p.id !== nextProvider.id) {
+                            p.status = 'pending';
+                            delete p.statusDate;
+                        }
+                    });
+                }
             }
 
             this.save();
@@ -359,45 +741,82 @@ const Store = {
         tomorrow.setDate(tomorrow.getDate() + 1);
         const tomorrowStr = getYYYYMMDD(tomorrow);
 
-        let changed = false;
-        let loopLimit = this.data.providers.length * 2; 
+        const skipDates = this.getSkipDates();
+        const settings = this.getSettings();
 
-        while (loopLimit > 0) {
-            loopLimit--;
-            
-            const activeProvider = this.getActiveProvider();
-            if (!activeProvider) break;
+        // 1. Reset everyone to pending first (to start fresh based on math)
+        this.data.providers.forEach(p => {
+            p.status = 'pending';
+            delete p.statusDate;
+        });
 
-            let currentDate = new Date(startDateStr);
-            const skipDates = this.getSkipDates();
-            let activeDateStr = null;
-            
-            for (const provider of this.data.providers) {
-                if (provider.isPaused) continue;
-                
-                while (skipDates.includes(getYYYYMMDD(currentDate))) {
-                    currentDate.setDate(currentDate.getDate() + 1);
-                }
-                
-                if (provider.id === activeProvider.id) {
-                    activeDateStr = getYYYYMMDD(currentDate);
-                    break;
-                }
-                
+        let currentIndex = 0;
+        let currentDate = new Date(startDateStr);
+        let activeId = null;
+        this.data.rotationEnded = false;
+
+        // Loop limit to prevent infinite loops
+        let loopLimit = 3650; 
+        
+        while (getYYYYMMDD(currentDate) <= tomorrowStr && loopLimit-- > 0) {
+            if (skipDates.includes(getYYYYMMDD(currentDate))) {
                 currentDate.setDate(currentDate.getDate() + 1);
+                continue;
             }
-            
-            if (!activeDateStr) break;
-            
-            if (activeDateStr < tomorrowStr) {
-                this.advanceQueue('skipped');
-                changed = true;
-            } else {
+
+            let loopCount = 0;
+            while (this.data.providers[currentIndex] && this.data.providers[currentIndex].isPaused && loopCount < this.data.providers.length) {
+                currentIndex++;
+                if (currentIndex >= this.data.providers.length) {
+                    if (settings.loopTo === 'custom' && settings.customStartProviderId) {
+                        const customIndex = this.data.providers.findIndex(prov => prov.id === settings.customStartProviderId);
+                        currentIndex = customIndex !== -1 ? customIndex : 0;
+                    } else {
+                        currentIndex = 0;
+                    }
+                }
+                loopCount++;
+            }
+
+            if (loopCount >= this.data.providers.length) {
+                this.data.rotationEnded = true;
                 break;
             }
+
+            let p = this.data.providers[currentIndex];
+
+            if (getYYYYMMDD(currentDate) < tomorrowStr) {
+                // Past date -> Mark as sent
+                p.status = 'sent';
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                p.statusDate = days[currentDate.getDay()];
+                
+                // Advance index
+                currentIndex++;
+                if (currentIndex >= this.data.providers.length) {
+                    if (settings.loopTo === 'custom' && settings.customStartProviderId) {
+                        const customIndex = this.data.providers.findIndex(prov => prov.id === settings.customStartProviderId);
+                        currentIndex = customIndex !== -1 ? customIndex : 0;
+                    } else {
+                        currentIndex = 0;
+                    }
+                }
+            } else {
+                // Today/Tomorrow's active provider
+                activeId = p.id;
+                p.status = 'pending';
+                delete p.statusDate;
+            }
+
+            currentDate.setDate(currentDate.getDate() + 1);
         }
-        
-        return changed;
+
+        if (activeId) {
+            this.data.activeProviderId = activeId;
+        }
+
+        this.save();
+        return true;
     },
 
     // State

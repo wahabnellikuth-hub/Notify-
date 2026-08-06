@@ -77,14 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnCancelSkipTomorrow = document.getElementById('btn-cancel-skip-tomorrow');
         const btnSkipProvider = document.getElementById('btn-skip-provider');
 
-        if (!Store.isRegistrationCompleted() || Store.getProviders().length === 0) {
+        if (Store.getProviders().length === 0) {
             completeCard.style.display = 'none';
             confirmationCard.style.display = 'none';
             activeCard.style.display = 'block';
             actionsCard.style.display = 'block';
             
-            document.getElementById('provider-name').textContent = "Registration Incomplete";
-            document.getElementById('provider-phone').textContent = "Complete setup in Members tab";
+            document.getElementById('provider-name').textContent = "No Providers Added";
+            document.getElementById('provider-phone').textContent = "Add members in the Members tab";
             btnPrepare.disabled = true;
             btnSkipTomorrow.style.display = '';
             btnSkipTomorrow.disabled = true;

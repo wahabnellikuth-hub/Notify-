@@ -23,12 +23,20 @@ try {
             elseif ($requestUrl.EndsWith(".js")) { $context.Response.ContentType = "application/javascript" }
             elseif ($requestUrl.EndsWith(".json")) { $context.Response.ContentType = "application/json" }
             
-            $context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
+            try {
+                $context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
+            } catch {
+                # Ignore disconnects
+            }
         } else {
             $context.Response.StatusCode = 404
         }
-        $context.Response.OutputStream.Close()
+        try {
+            $context.Response.OutputStream.Close()
+        } catch {}
     }
+} catch {
+    Write-Host "Server encountered an error: $($_.Exception.Message)"
 } finally {
     $listener.Stop()
 }

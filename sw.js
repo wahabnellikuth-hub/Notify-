@@ -1,4 +1,4 @@
-const CACHE_NAME = 'food-service-v25';
+const CACHE_NAME = 'food-service-v26';
 const ASSETS = [
     '/',
     '/index.html',
@@ -6,7 +6,8 @@ const ASSETS = [
     '/js/store.js',
     '/js/app.js',
     '/manifest.json',
-    '/icon.png'
+    '/icon.png',
+    '/images/food_bg.png'
 ];
 
 self.addEventListener('install', event => {

@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeCard = document.getElementById('active-provider-card');
         const actionsCard = document.getElementById('active-provider-actions');
         const completeCard = document.getElementById('rotation-complete-card');
+        const confirmationCard = document.getElementById('sent-confirmation-card');
         const btnPrepare = document.getElementById('btn-prepare-msg-home');
         const btnSkipTomorrow = document.getElementById('btn-skip-tomorrow');
         const btnCancelSkipTomorrow = document.getElementById('btn-cancel-skip-tomorrow');
@@ -78,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!Store.isRegistrationCompleted() || Store.getProviders().length === 0) {
             completeCard.style.display = 'none';
+            confirmationCard.style.display = 'none';
             activeCard.style.display = 'block';
             actionsCard.style.display = 'block';
             
@@ -93,14 +95,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (Store.isRotationEnded()) {
             completeCard.style.display = 'block';
+            confirmationCard.style.display = 'none';
             activeCard.style.display = 'none';
             actionsCard.style.display = 'none';
             return;
-        } else {
-            completeCard.style.display = 'none';
-            activeCard.style.display = 'block';
-            actionsCard.style.display = 'block';
         }
+        
+        if (Store.getLastSentDate() === getYYYYMMDD(today)) {
+            completeCard.style.display = 'none';
+            confirmationCard.style.display = 'block';
+            activeCard.style.display = 'none';
+            actionsCard.style.display = 'none';
+            return;
+        }
+
+        completeCard.style.display = 'none';
+        confirmationCard.style.display = 'none';
+        activeCard.style.display = 'block';
+        actionsCard.style.display = 'block';
 
         const skipDates = Store.getSkipDates();
         const targetStr = getYYYYMMDD(tomorrow);
@@ -232,10 +244,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const todayStr = getYYYYMMDD(new Date());
         if (todayStr !== lastCheckedDay) {
             lastCheckedDay = todayStr;
-            if (Store.autoCatchUpProviders()) {
-                renderHome();
-                renderMembers();
-            }
+            Store.autoCatchUpProviders();
+            renderHome();
+            renderMembers();
         }
 
         const settings = Store.getSettings();

@@ -337,6 +337,9 @@ const Store = {
                 this.data.rotationEnded = false;
             }
             
+            // Clear last sent date to bring back the normal home view if it was sent today
+            this.data.lastSentDate = null;
+            
             this.data.activeProviderId = id;
             this.save();
         }
